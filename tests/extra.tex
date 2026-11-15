@@ -1,0 +1,65 @@
+% Further tests of wrapblock: block in an \item, footnote, inline
+% fractions, page sweep. With tagging:
+%   lualatex "\def\TAGGING{}\input{extra}"
+\ifdefined\TAGGING
+  \DocumentMetadata{lang=en, pdfversion=2.0, pdfstandard=ua-2, tagging=on}
+\fi
+\documentclass[11pt,a4paper]{article}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}\usepackage{lmodern}
+\fi
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,graphicx}
+\title{wrapblock tests}
+\usepackage{wrapblock}
+\newcommand\img{\includegraphics[width=0.3\textwidth, alt={Test image}]{example-image-a}}
+\newcommand\sentence{The unknowns of the problem are the impulse, the velocity and the angular velocity after the impact, five unknowns in all. }
+\newcommand\para{\sentence\sentence\sentence}
+\begin{document}
+
+\noindent\textbf{E1 --- block in an \texttt{\textbackslash item}}\par\medskip
+
+\begin{enumerate}
+\item First question, without an image. \para
+\item Second question, with an image:
+\begin{wrapblock}{\img}
+\para
+\begin{itemize}
+\item a sub-question \sentence
+\item another sub-question \sentence
+\end{itemize}
+\para
+\end{wrapblock}
+\item Third question, after the block. \para
+\end{enumerate}
+\clearpage
+
+\noindent\textbf{E2 --- inline fractions beside the image}\par\medskip
+
+\begin{wrapblock}[side=l]{\img}
+Let $\dfrac{\omega_0}{Q}$ and $\dfrac{1}{2}mv^2$, then $\displaystyle\sum_{k=1}^{n}\frac{a_k}{b_k}$ in the line. \sentence Let $\dfrac{\omega_0}{Q}$ and $\dfrac{1}{2}mv^2$. \sentence Let $\dfrac{\omega_0}{Q}$ and again $\dfrac{1}{2}mv^2$. \sentence\sentence\sentence\sentence
+\end{wrapblock}
+Text after the block, full width. \para
+\clearpage
+
+\noindent\textbf{E3 --- footnote beside the image}\par\medskip
+
+\begin{wrapblock}{\img}
+\sentence A note here\footnote{The footnote, which must appear at the bottom of this page.}. \sentence\sentence
+
+\para
+\end{wrapblock}
+\para
+\clearpage
+
+\noindent\textbf{E4 --- page break sweep}\par\medskip
+\vspace*{17cm}
+
+\begin{wrapblock}{\img}
+\para\para
+\end{wrapblock}
+\para
+
+\end{document}

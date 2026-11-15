@@ -1,0 +1,24 @@
+% Minimal example: a tagged PDF (PDF/UA-2).
+% Check the structure with `pdfinfo -struct mwe-tagged.pdf`,
+% or validate with `verapdf --flavour ua2 mwe-tagged.pdf`.
+\DocumentMetadata{tagging=on, pdfstandard=ua-2, lang=en}
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{wrapblock}
+\title{A tagged example}
+\begin{document}
+
+\section{A block with a list}
+
+\begin{wrapblock}{\includegraphics[width=4cm, alt={A placeholder image with the letter A}]{example-image-a}}
+The image is a \texttt{Figure} element, with its alternative text, placed before the text it goes with.
+\begin{itemize}
+  \item The list keeps its \texttt{L}, \texttt{LI}, \texttt{Lbl} and \texttt{LBody} elements.
+  \item The paragraphs keep their \texttt{P} elements.
+\end{itemize}
+The structure is the one the same text would have without the package.
+\end{wrapblock}
+
+The text after the block is an ordinary paragraph.
+
+\end{document}

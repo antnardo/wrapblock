@@ -1,0 +1,160 @@
+% Limits of wrapblock. One scene per page; collisions.py looks for the
+% words that overlap an image. Variants:
+%   \def\BOOK{}      book class, twoside, \flushbottom (glue shrinks)
+%   \def\TAGGING{}   tagged PDF
+%   \def\PLAINIMG{}  \includegraphics as image, instead of the marked frame
+\ifdefined\TAGGING
+  \DocumentMetadata{lang=en, pdfversion=2.0, pdfstandard=ua-2, tagging=on}
+\fi
+\ifdefined\BOOK
+  \documentclass[11pt,a4paper,twoside]{book}\flushbottom
+\else
+  \documentclass[11pt,a4paper]{article}
+\fi
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}\usepackage{lmodern}
+\fi
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,graphicx}
+\title{wrapblock tests}
+\usepackage{wrapblock}
+% The test image: a 4 cm frame, #1 high, with its three markers.
+\ifdefined\PLAINIMG
+  \newcommand\img[1][3cm]{\includegraphics[width=4cm,height=#1,alt={Image}]{example-image-a}}
+\else
+  \newcommand\img[1][3cm]{\fbox{\parbox[t][#1][s]{4cm}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+\fi
+\newcommand\sentence{The unknowns of the problem are the impulse, the velocity and the angular velocity after the impact. }
+\newcommand\para{\sentence\sentence\sentence}
+\newcommand\tall{$\dfrac{\dfrac{a}{b}}{\dfrac{c}{d}}$}
+\newcommand\scene[1]{\clearpage\noindent\textbf{#1}\par\medskip}
+\begin{document}
+
+\scene{L1 --- stacked fractions all over the zone}
+\begin{wrapblock}{\img}
+\sentence\tall\ \sentence\tall\ \sentence\tall\ \sentence\tall\ \sentence\tall\ \sentence\tall\ \sentence
+\end{wrapblock}
+\para
+
+% L2: a tall line after the k-th sentence, sweeping the end of the zone.
+\newcommand\sweep[1]{%
+  \begin{wrapblock}{\img[2.5cm]}
+  \count255=0
+  \loop\ifnum\count255<#1 \sentence\advance\count255 1 \repeat
+  \tall\ \sentence\sentence\sentence\sentence
+  \end{wrapblock}
+  \para\par}
+\scene{L2 --- tall line at the end of the zone, k = 2 to 4}
+\sweep{2}\sweep{3}\sweep{4}
+\scene{L2 --- k = 5 to 7}
+\sweep{5}\sweep{6}\sweep{7}
+
+\scene{L3 --- long footnotes in the zone, at the bottom of the page}
+\vspace*{13cm}
+\begin{wrapblock}{\img}
+\sentence A note\footnote{\para\para} here. \sentence And another\footnote{\para\para} there. \sentence\sentence
+
+\para
+\end{wrapblock}
+\para
+
+\scene{L3b --- very long footnote, block set lower}
+\vspace*{15cm}
+\begin{wrapblock}{\img}
+\sentence A note\footnote{\para\para\para\para\para\para} here. \sentence\sentence
+
+\para
+\end{wrapblock}
+\para
+
+\scene{L4 --- tight lists, several paragraphs, non-zero \texttt{\textbackslash parskip}}
+{\setlength\parskip{1ex plus 2pt minus 1pt}
+\begin{wrapblock}[side=l]{\img}
+Short.
+
+Short too.
+\begin{itemize}
+\item one
+\item two \tall
+\item three
+\begin{enumerate}
+\item a
+\item b
+\end{enumerate}
+\item four
+\end{itemize}
+\sentence\sentence
+\end{wrapblock}
+\para\par}
+
+\scene{L5 --- \texttt{\textbackslash parbox} and \texttt{minipage} in the zone}
+\begin{wrapblock}{\img}
+\sentence
+
+\noindent\parbox{\linewidth}{\sentence\sentence}
+
+\begin{minipage}{\linewidth}\sentence\sentence\end{minipage}
+
+\sentence\sentence
+\end{wrapblock}
+
+\scene{L6 --- displayed equations, image on the left}
+\begin{wrapblock}[side=l]{\img[4cm]}
+\sentence
+\[ E = mc^2 \]
+\sentence
+\begin{equation} \dfrac{\dfrac{a}{b}}{c} = 1 \end{equation}
+\sentence
+\begin{align} x &= 1 \\ y &= 2 \end{align}
+\sentence\sentence\sentence
+\end{wrapblock}
+\para
+
+\scene{L7 --- heading, centred and ragged text in the zone}
+\begin{wrapblock}{\img[4cm]}
+\sentence
+\paragraph{A heading.} \sentence
+\begin{center} A centred line. \end{center}
+{\raggedright \sentence\sentence\par}
+\sentence
+\end{wrapblock}
+\para
+
+\scene{L8 --- text shorter than the image, then two blocks in a row}
+\begin{wrapblock}{\img}
+Short.
+\end{wrapblock}
+\para
+\begin{wrapblock}[l]{\img[2cm]}
+\para
+\end{wrapblock}
+\begin{wrapblock}{\img[2cm]}
+\para
+\end{wrapblock}
+\para
+
+\scene{L9 --- \texttt{width}, and blocks opening list items}
+\begin{enumerate}
+\item \sentence
+\begin{wrapblock}[width=6cm]{\img}
+\para
+\end{wrapblock}
+\item \begin{enumerate}\item \begin{enumerate}\item
+\begin{wrapblock}[l]{\img}
+\para
+\end{wrapblock}
+\end{enumerate}\end{enumerate}
+\end{enumerate}
+
+\scene{L10 --- heading at the bottom of the page, then a block that does not fit}
+\vspace*{17.6cm}
+\para
+\subsection*{Heading L10}
+\begin{wrapblock}{\img}
+\para
+\end{wrapblock}
+\para
+
+\end{document}

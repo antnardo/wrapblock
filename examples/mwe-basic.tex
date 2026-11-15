@@ -1,0 +1,25 @@
+% Minimal example: an image on the right, then on the left, with an equation.
+% Compiles with pdflatex and lualatex.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{kantlipsum}
+\usepackage{wrapblock}
+\begin{document}
+
+\section{Image on the right (default)}
+
+\begin{wrapblock}{\includegraphics[width=4cm]{example-image-a}}
+\kant[1]
+\[ E = mc^2 \]
+\kant[2]
+\end{wrapblock}
+
+The text after the block is full width: \kant[3]
+
+\section{Image on the left}
+
+\begin{wrapblock}[side=l, hsep=1.5em]{\includegraphics[width=3cm]{example-image-b}}
+\kant[4]
+\end{wrapblock}
+
+\end{document}

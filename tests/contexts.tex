@@ -1,0 +1,48 @@
+% wrapblock in a box, in multicols, in \twocolumn mode.
+%   \def\TWOCOL{}  twocolumn class option
+\ifdefined\TWOCOL
+  \documentclass[11pt,a4paper,twocolumn]{article}
+\else
+  \documentclass[11pt,a4paper]{article}
+\fi
+\usepackage{iftex}
+\ifPDFTeX \usepackage[T1]{fontenc}\usepackage{lmodern}\fi
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{multicol,tcolorbox}
+\usepackage{wrapblock}
+\newcommand\img[1][3cm]{\fbox{\parbox[t][#1][s]{3cm}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+\newcommand\sentence{The unknowns of the problem are the impulse, the velocity and the angular velocity after the impact. }
+\newcommand\para{\sentence\sentence\sentence}
+\begin{document}
+\ifdefined\TWOCOL
+\para
+\begin{wrapblock}{\img}\para\para\end{wrapblock}
+\para\para\para\para\para\para
+\begin{wrapblock}[l]{\img}\para\para\end{wrapblock}
+\para
+\else
+C1 --- minipage
+
+\para
+
+\noindent\begin{minipage}{\linewidth}
+\para
+\begin{wrapblock}{\img}\para\end{wrapblock}
+\end{minipage}
+
+C2 --- tcolorbox
+
+\begin{tcolorbox}
+\begin{wrapblock}{\img}\para\end{wrapblock}
+\end{tcolorbox}
+
+\clearpage
+C3 --- multicols
+\begin{multicols}{2}
+\para
+\begin{wrapblock}{\img[2cm]}\para\end{wrapblock}
+\para\para\para
+\end{multicols}
+\fi
+\end{document}

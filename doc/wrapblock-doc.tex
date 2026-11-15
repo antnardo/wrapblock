@@ -1,0 +1,227 @@
+% !TEX program = lualatex
+% wrapblock-doc.tex -- documentation of the wrapblock package
+% Compiles with LuaLaTeX and with pdfLaTeX.
+\documentclass[a4paper,11pt]{article}
+
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\fi
+\usepackage[english]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,graphicx,booktabs,tabularx}
+\usepackage[skins,documentation]{tcolorbox}
+\hypersetup{hidelinks}
+\usepackage{wrapblock}
+
+\tcbset{color command=red!60!black, color key=blue!60!black, color value=teal!70!black}
+
+\newcommand\pkg[1]{\textsf{#1}}
+\newcommand\key[1]{\texttt{#1}}
+\providecommand\env[1]{\texttt{#1}}
+% The image of the examples, with its alternative text.
+\newcommand\sample[1][0.25\linewidth]{\includegraphics[width=#1, alt={Sample image}]{example-image-a}}
+\newcommand\sampletext{A ball of mass $m$ bounces on the floor; we look for its velocity and angular velocity after the impact, assuming a point contact where the ball may slip. }
+
+\title{\pkg{wrapblock}\\[0.4em]
+  \large An image beside its own text, which wraps around it and runs below}
+\author{Antonin Marchand}
+\date{Version 0.1 --- 15 November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The \pkg{wrapblock} package provides a single environment that sets an image beside a block of text: the text is narrowed along the image, then takes the full width again below it. The block is closed: the image never spills over what follows. Four properties set it apart from existing wrapping packages: the text beside the image may hold lists, nested to any depth, and the block may itself open a list item; the image and the lines beside it stay on the same page; it works with pdf\LaTeX{} and Lua\LaTeX; it leaves the structure of a tagged PDF as it would be without the package.
+\end{abstract}
+
+\tableofcontents
+
+% =========================================================================
+\section{What the package does}
+
+\begin{wrapblock}{\sample}
+This paragraph is typeset by \pkg{wrapblock}. The text runs along the image, on its left, then takes the full width again once it is past it. \sampletext\sampletext
+\begin{itemize}
+\item a list beside the image is narrowed too,
+\item with its labels in their place;
+\end{itemize}
+and the text after the list goes on wrapping, down to the bottom of the image and beyond. \sampletext
+\end{wrapblock}
+
+The text after the environment is full width, however long the block is: when the text of the block is shorter than the image, vertical space is added down to the bottom of the image.
+
+A block never breaks across pages while it runs along the image: when there is not enough room left at the bottom of the page for the image, the whole block starts on the next page, together with the heading that precedes it. Below the image, the text of the block breaks like any other text.
+
+The package does only this. There is no image wrapped in the middle of a paragraph, no text flowing around a shape, no floating image: for those, see \pkg{wrapfig2}, \pkg{wrapstuff}, \pkg{cutwin} or \pkg{picinpar}. Section~\ref{sec:others} explains why none of them covers the four properties above.
+
+% =========================================================================
+\section{Usage}
+
+\begin{verbatim}
+\usepackage{wrapblock}
+...
+\begin{wrapblock}[side=l, hsep=1.5em]{\includegraphics[width=4cm]{diagram}}
+  The text of the block: paragraphs, lists, equations.
+\end{wrapblock}
+\end{verbatim}
+
+\begin{docEnvironment}{wrapblock}{\oarg{keys}\marg{image}}
+  Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The environment starts a new paragraph, and so does the text after it.
+\end{docEnvironment}
+
+\begin{docCommand}{wrapblockset}{\marg{keys}}
+  Sets the keys for all the following blocks, within the current group.
+\end{docCommand}
+
+\subsection{Keys}
+
+\begin{docKey}[wrapblock]{side}{=\texttt{l}\textbar\texttt{r}}{default \texttt{r}}
+  The side of the image: right (\key{r}) or left (\key{l}) of the text.
+\end{docKey}
+
+\begin{docKey}[wrapblock]{l}{}{}
+  Short for \key{side=l}. Likewise \key{r} for \key{side=r}.
+\end{docKey}
+
+\begin{docKey}[wrapblock]{width}{=\meta{length}}{default \texttt{0pt}}
+  The width reserved for the image, which is centred in it. With \texttt{0pt}, the natural width of the image. Useful to align several blocks whose images differ in width.
+\end{docKey}
+
+\begin{docKey}[wrapblock]{hsep}{=\meta{length}}{default \texttt{1em}}
+  The horizontal space between the image and the text.
+\end{docKey}
+
+\begin{docKey}[wrapblock]{vsep}{=\meta{length}}{default \texttt{0.5\textbackslash baselineskip}}
+  The vertical space below the image, before the text takes the full width again.
+\end{docKey}
+
+\subsection{Image on the left}
+
+\begin{verbatim}
+\begin{wrapblock}[l]{\includegraphics[width=0.25\linewidth]{example-image-a}}
+\end{verbatim}
+
+\begin{wrapblock}[l]{\sample}
+\sampletext\sampletext\sampletext\sampletext
+\end{wrapblock}
+
+% =========================================================================
+\section{What the block may contain}
+
+\subsection{Lists}
+
+A list in the block is narrowed along the image, labels included, at any depth; it gets its normal width back below the image. The block may also open an \cs{item}: the image is then aligned with the margin of the item and, on the left, the labels stay in the margin, before the image.
+
+\begin{enumerate}
+\item A question without an image. \sampletext
+\item \begin{wrapblock}[l]{\sample[0.2\linewidth]}
+A question with its diagram, on the left:
+\begin{enumerate}
+\item a sub-question \sampletext
+\item another one.
+\end{enumerate}
+\sampletext
+\end{wrapblock}
+\item The next question, after the block.
+\end{enumerate}
+
+\subsection{Displayed equations}
+
+A displayed equation (\verb|\[ \]|, \env{equation}, \env{align}\dots) is centred in the width left beside the image. After it, the paragraph goes on wrapping from where the equation ended.
+
+\begin{wrapblock}{\sample[0.22\linewidth]}
+The conservation of angular momentum about the contact point gives
+\[ J\omega' + m R v' = J\omega + m R v , \]
+and Coulomb's law, while the contact slips,
+\begin{equation} \lVert \vec T \rVert = f \lVert \vec N \rVert . \end{equation}
+The text goes on below the equation, still along the image as long as it has not passed it. \sampletext
+\end{wrapblock}
+
+\subsection{Footnotes, inline formulas}
+
+A footnote called in the block goes to the foot of the page, as anywhere else. A line taller than the others, with an inline fraction for instance, pushes the next ones down; since the package counts lines in \cs{baselineskip}, the wrapping may then last one line longer than needed, never one line shorter.
+
+\subsection{Boxes}
+
+The text of a box --- \cs{parbox}, \env{minipage}, \texttt{p} column of a table --- keeps the width it was given and is not wrapped. A box wider than the room left beside the image therefore overlaps the image; the package says so with a warning. A box set below the image raises no problem.
+
+% =========================================================================
+\section{Where the environment may be used}
+
+\begin{description}
+\item[In running text and in lists] All of the above.
+\item[In \texttt{twocolumn} mode and in \env{multicols}] The block wraps its text within its column, and does not break from one column to the next while it runs along the image.
+\item[In a box] In a \env{minipage}, a \cs{parbox}, a \env{tcolorbox}\dots, the package cannot tell where it stands, and no page breaks there anyway. The text is then set in a \env{minipage} beside the image, aligned on its first line, without running below the image; an information message in the \texttt{.log} says so.
+\item[In another block] Blocks do not nest: this is an error.
+\end{description}
+
+% =========================================================================
+\section{Tagged PDF}
+
+With \verb|\DocumentMetadata{tagging=on}|, the text of the block is typeset in the main galley: paragraphs, lists and formulas keep the structure \LaTeX{} gives them. The image is typeset at the start of the first paragraph of the block, as if it had been written there: an \cs{includegraphics} becomes a \texttt{Figure} element there, before the text it goes with, and its alternative text is given as usual, with the \key{alt} key:
+
+\begin{verbatim}
+\begin{wrapblock}{\includegraphics[width=4cm, alt={The ball}]{ball}}
+\end{verbatim}
+
+An image of another kind --- \env{tikzpicture}, \env{tabular}, \cs{fbox} --- is tagged exactly as it would be at the start of a paragraph without the package; describing it is left to the author, as it is without the package.
+
+The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard=ua-2|, with an \cs{includegraphics}, a \env{tabular}, a \env{tikzpicture}, a \cs{parbox}, a \env{minipage} and an \cs{fbox} as image: tagpdf gives no more warnings than with the same image at the start of an ordinary paragraph, and the structure tree is the same with pdf\LaTeX{} and Lua\LaTeX. veraPDF~1.30 finds the tagged example \texttt{examples/mwe-tagged.tex} conformant to PDF/UA-2 with both engines, and finds nothing in the tests that the same document does not give without the package; with pdf\LaTeX, a footnote breaks clause~8.2.2, with or without the package. The PDF/UA conformance of a whole document does not depend on this package only.
+
+% =========================================================================
+\section{Messages}
+
+\begin{description}
+\item[\texttt{wrapblock blocks cannot be nested}] (error) A block in the text of another one.
+\item[\texttt{A box of width \dots{} sits beside the image}] (warning) A box wider than the room left beside the image; see Boxes above.
+\item[\texttt{The block \dots{} moved to a new page}] (warning) The text beside the image moved to another page while it was set, which only very large insertions (footnotes, floats) can cause. The wrapping may then be off by a few lines. The tests could not trigger this case, which \TeX{} avoids by moving the whole block.
+\item[\texttt{The block \dots{} is inside a box}] (information) See ``In a box''.
+\end{description}
+
+% =========================================================================
+\section{How it works}
+
+The text of the block is typeset where it stands, in the main galley: nothing is boxed, which is what leaves page breaks, lists and tagging untouched.
+
+\begin{itemize}
+\item The image is typeset twice: at the start of the environment, to measure it, with tagging suspended; then in the first line of the block, where it is placed in a box with no width, height or depth. An image that steps a counter therefore steps it twice.
+\item For each paragraph of the block, the \texttt{para/begin} hook reads the shape \LaTeX{} gave the paragraph --- a \cs{parshape} in a list ---, works out from \cs{pagetotal} how many of its lines still run along the image, and narrows those with a new \cs{parshape}.
+\item No page break may separate the lines along the image. To that end, \cs{interlinepenalties} forbids breaks inside a paragraph, \cs{nobreak} forbids them between paragraphs, and the penalties of lists and equations are set to 10\,000.
+\item When the room left on the page is too small for the image, or when the page already holds more than it can take, the package makes \TeX{} break the page at its best earlier breakpoint --- before the heading, if a heading precedes the block --- and only then measures the room left.
+\item After a displayed equation, the remaining lines are worked out again from where the equation ended.
+\end{itemize}
+
+The package needs a \LaTeX{} with paragraph hooks (2021 or later); it is written in \pkg{expl3}, and was tested with TeX~Live~2026.
+
+% =========================================================================
+\section{Other packages}\label{sec:others}
+
+These packages were tried on the same scenes as \pkg{wrapblock} (short text, list beside the image, image in a list, equations, image set lower and lower on the page), with both engines, in November 2026.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Package & What was observed \\
+\midrule
+\pkg{wrapfig} 3.6 & Does not work in lists, as its documentation says; at the bottom of the page, the image overflows the text area. \\
+\pkg{wrapfig2} 7.0.2 & An image in a list breaks the list; at the bottom of the page, the image overflows as with \pkg{wrapfig}. \\
+\pkg{wrapstuff} 0.3 & Handles page breaks, by moving the block on the next run; but loses text when a list or a displayed equation runs along the image. \\
+\pkg{sidefig-latex} & Wraps lists well; at the bottom of the page, the image goes out of the text area. Not in TeX~Live. \\
+side-by-side \env{minipage}s & The text does not run below the image, and the block never breaks. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\pkg{cutwin}, \pkg{picinpar} and \pkg{floatflt} were not tried: according to their documentation, the first two cut a window in a paragraph, and the third one floats the image, which is a different need.
+
+% =========================================================================
+\section{History}
+
+\begin{description}
+\item[0.1 (15 November 2026)] First version.
+\end{description}
+
+\end{document}

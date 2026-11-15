@@ -1,0 +1,25 @@
+% Minimal example: page breaks.
+% The first block does not fit at the bottom of page 1: it moves to page 2,
+% together with the heading before it. The image is never split from the
+% lines beside it, and the text below the image may run on to the next page.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{kantlipsum}
+\usepackage{wrapblock}
+\begin{document}
+
+\kant[1-3]
+
+\section{A heading that moves with its block}
+
+\begin{wrapblock}{\includegraphics[width=4cm, height=5cm]{example-image-a}}
+\kant[6-8]
+\end{wrapblock}
+
+\section{A long block}
+
+\begin{wrapblock}[side=l]{\includegraphics[width=4cm]{example-image-b}}
+\kant[9-14]
+\end{wrapblock}
+
+\end{document}

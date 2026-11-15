@@ -1,0 +1,14 @@
+# Build output
+*.aux
+*.log
+*.toc
+*.out
+*.synctex.gz
+tests/*.pdf
+doc/wrapblock-doc-*.pdf
+__pycache__/
+.ruff_cache/
+.DS_Store
+# Working notes
+ETAT.md
+examples/out-*/
