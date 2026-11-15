@@ -71,6 +71,7 @@
 \box_new:N  \l__wrapblock_labels_box
 \dim_new:N  \g__wrapblock_text_dim      % height of the text at full width
 \bool_new:N \l__wrapblock_defer_bool
+\bool_new:N \l__wrapblock_allow_defer_bool
 
 \hook_gput_code:nnn { shipout / after } { wrapblock }
   { \int_gincr:N \g__wrapblock_ship_int }
@@ -152,6 +153,9 @@
     hsep  .initial:n  = 1em ,
     vsep  .dim_set:N  = \l__wrapblock_vsep_dim ,
     vsep  .initial:n  = 0.5\baselineskip ,
+    defer .bool_set:N = \l__wrapblock_allow_defer_bool ,
+    defer .initial:n  = true ,
+    defer .default:n  = true ,
   }
 \NewDocumentCommand \wrapblockset { m } { \keys_set:nn { wrapblock } {#1} }
 
@@ -498,7 +502,13 @@
       { \int_zero:N \l__wrapblock_full_int }
     \int_compare:nNnTF { \l__wrapblock_full_int } = { 0 }
       {
-        \__wrapblock_commit:
+        % the image goes to the page after the coming break, or to the
+        % page being built if the page already broke
+        \__wrapblock_commit:n
+          {
+            \g__wrapblock_ship_int
+            \int_compare:nNnT { \g__wrapblock_ship_int } = { \g__wrapblock_origin_ship_int } { + 1 }
+          }
         \__wrapblock_shape:Nnnn #1 { \tex_prevgraf:D } { 0 } { \topskip }
       }
       {
@@ -517,11 +527,11 @@
     \int_set:Nn \postdisplaypenalty { 10000 }
   }
 
-% The page broke: the image goes to the top of the page being built.
-\cs_new_protected:Npn \__wrapblock_commit:
+% The image goes to the top of the page shipped after #1 pages.
+\cs_new_protected:Npn \__wrapblock_commit:n #1
   {
     \bool_gset_false:N \g__wrapblock_wait_bool
-    \int_gincr:N \g__wrapblock_origin_ship_int
+    \int_gset:Nn \g__wrapblock_origin_ship_int {#1}
     \int_gincr:N \g__wrapblock_def_int
     \tl_gset_eq:cN { g__wrapblock_def_ \int_use:N \g__wrapblock_def_int _tl }
       \g__wrapblock_img_tl
@@ -588,11 +598,16 @@
       {
         \int_compare:nNnT { \tex_prevgraf:D } > { \g__wrapblock_full_end_int }
           {
-            \__wrapblock_commit:
-            % The page is not shipped yet: a penalty runs the page
-            % builder, and the output routine, before the zone goes on.
+            % A penalty runs the page builder, and the output routine, if
+            % the page is not shipped yet; the image goes to the page being
+            % built. It may come later than planned: a footnote in the
+            % full-width lines shortens the page, which then breaks twice.
             \int_compare:nNnF { \tex_prevgraf:D } > { \g__wrapblock_narrowed_int }
               { \tex_penalty:D 10000 ~ }
+            \int_compare:nNnT
+              { \g__wrapblock_ship_int } > { \g__wrapblock_origin_ship_int + 1 }
+              { \msg_warning:nn { wrapblock } { early } }
+            \__wrapblock_commit:n { \g__wrapblock_ship_int }
             \__wrapblock_zone_after:
           }
       }
@@ -691,7 +706,10 @@
       }
       { \__wrapblock_need_space: }
       {
-        \dim_compare:nNnTF { \__wrapblock_room: } < { 2 \baselineskip }
+        % defer=false: the body is not measured, the whole block moves
+        \bool_lazy_or:nnTF
+          { ! \l__wrapblock_allow_defer_bool }
+          { \dim_compare_p:nNn { \__wrapblock_room: } < { 2 \baselineskip } }
           { \__wrapblock_need_space: }
           {
             \__wrapblock_measure:n {#1}
@@ -770,6 +788,11 @@
           }
       }
   }
+\msg_new:nnn { wrapblock } { early }
+  { The~page~broke~too~early~in~the~text~of~the~block~on~input~line~
+    \msg_line_number:,~before~its~image~was~set:~a~footnote~in~the~
+    full-width~lines~shortened~the~page.~A~page~with~a~few~lines~is~left~
+    before~the~image.~Moving~the~footnote~below~the~image~solves~it. }
 \msg_new:nnn { wrapblock } { alone }
   { The~text~of~the~block~on~input~line~\msg_line_number:\ ended~before~
     the~bottom~of~the~page:~its~image~is~set~after~it. }

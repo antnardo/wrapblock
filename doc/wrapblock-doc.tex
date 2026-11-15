@@ -51,7 +51,7 @@ This paragraph is typeset by \pkg{wrapblock}. The text runs along the image, on 
 and the text after the list goes on wrapping, down to the bottom of the image and beyond. \sampletext
 \end{wrapblock}
 
-The text after the environment is full width, however long the block is: when the text of the block is shorter than the image, vertical space is added down to the bottom of the image.
+The text after the environment is full width, however long the block is: when the text of the block is shorter than the image, vertical space is added down to the bottom of the image (section~\ref{sec:know}).
 
 The image and the lines beside it are never split by a page break. Near the bottom of a page, three cases arise:
 \begin{itemize}
@@ -62,6 +62,46 @@ The image and the lines beside it are never split by a page break. Near the bott
 Below the image, the text of the block breaks like any other text. The cases are shown, with long, medium and short texts, in \texttt{mwe-pagebreak.tex}, in the \texttt{examples} folder.
 
 The package does only this. There is no image wrapped in the middle of a paragraph, no text flowing around a shape, no floating image: for those, see \pkg{wrapfig2}, \pkg{wrapstuff}, \pkg{cutwin} or \pkg{picinpar}. Section~\ref{sec:others} explains why none of them covers the four properties above.
+
+% =========================================================================
+\section{Three things to know}\label{sec:know}
+
+\subsection{The text should be at least as long as the image}
+
+The block is closed: the text after it never runs beside the image. When the text of the block is shorter than the image, the block ends with vertical space, down to the bottom of the image:
+
+\begin{wrapblock}{\sample[0.2\linewidth]}
+A short text, two lines long, beside a taller image: the block ends below the image, and leaves this blank.
+\end{wrapblock}
+
+This paragraph comes after the block. Lengthening the text of the block, taking the next paragraph into it or making the image smaller removes the blank.
+
+\pkg{wrapfig}, \pkg{wrapfig2} and \pkg{wrapstuff} leave no blank: their image is not closed in a block, so the paragraphs that follow run beside it in turn, until they are past it (checked with both engines, November 2026). The price is that whatever follows is narrowed: a heading, or a list, which \pkg{wrapfig} cannot narrow. With \pkg{wrapblock}, the text that runs beside the image is always the text of the block, and nothing else.
+
+\subsection{Near the bottom of a page, the text is typeset twice}
+
+When the block starts with less room left on the page than its image needs, the package typesets the text of the block a first time, at full width, in a box that it then throws away: this tells it whether the text can fill the bottom of the page (section~\ref{sec:works}). Elsewhere on the page, the text is typeset once.
+
+\begin{itemize}
+\item \LaTeX{} counters, those made by \cs{newcounter} --- equations, footnotes, list items, theorems, sections --- are put back after the measure: the numbers are right.
+\item Labels, footnotes, index entries and table-of-contents lines vanish with the box: they are written once.
+\item Anything else the text does globally is done twice. This was checked with a \TeX{} count stepped by \verb|\global\advance|, an \pkg{expl3} integer stepped by \verb|\int_gincr:N|, an \verb|\immediate\write|, and the first use of an acronym with \pkg{glossaries} and with \pkg{acro}: the first use, which prints the long form, is spent on the measure, and the text shows the short form. A \cs{gdef} is done twice too.
+\end{itemize}
+
+When the text holds such a command, \key{defer=false} turns the measure off: near the bottom of a page, the whole block then moves to the next page when its image does not fit, and its text is typeset once. Putting the first use of an acronym outside the block is another way.
+
+The image, for its part, is always typeset twice, at every block: once to measure it, once for good (section~\ref{sec:works}).
+
+\subsection{No verbatim in the block}
+
+The text of the block is read as an argument before it is typeset, so that it can be measured. \cs{verb}, \env{verbatim}, \env{lstlisting} or \env{minted} cannot be used in it: they give an error. Verbatim material can be typeset beforehand in a box, which the block then uses:
+\begin{verbatim}
+\newsavebox\code
+\begin{lrbox}{\code}\verb|\int_gincr:N|\end{lrbox}
+\begin{wrapblock}{\includegraphics{diagram}}
+  The function \usebox{\code} steps an integer.
+\end{wrapblock}
+\end{verbatim}
 
 % =========================================================================
 \section{Usage}
@@ -77,7 +117,7 @@ The package does only this. There is no image wrapped in the middle of a paragra
 \begin{docEnvironment}{wrapblock}{\oarg{keys}\marg{image}}
   Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The environment starts a new paragraph, and so does the text after it.
 
-  The contents are read as an argument, before they are typeset: they cannot hold verbatim material (\cs{verb}, \env{verbatim}).
+  The contents are read as an argument, before they are typeset: they cannot hold verbatim material (\cs{verb}, \env{verbatim}); see section~\ref{sec:know}.
 \end{docEnvironment}
 
 \begin{docCommand}{wrapblockset}{\marg{keys}}
@@ -100,6 +140,10 @@ The package does only this. There is no image wrapped in the middle of a paragra
 
 \begin{docKey}[wrapblock]{hsep}{=\meta{length}}{default \texttt{1em}}
   The horizontal space between the image and the text.
+\end{docKey}
+
+\begin{docKey}[wrapblock]{defer}{=\texttt{true}\textbar\texttt{false}}{default \texttt{true}}
+  Whether the image may go to the top of the next page while the text fills the bottom of this one. With \key{false}, a block whose image does not fit at the bottom of the page moves to the next page as a whole, and its text is not measured beforehand: it is typeset once (section~\ref{sec:know}).
 \end{docKey}
 
 \begin{docKey}[wrapblock]{vsep}{=\meta{length}}{default \texttt{0.5\textbackslash baselineskip}}
@@ -190,11 +234,12 @@ The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard
 \item[\texttt{The block \dots{} moved to a new page}] (warning) The text beside the image moved to another page while it was set, which only very large insertions (footnotes, floats) can cause. The wrapping may then be off by a few lines. The tests could not trigger this case, which \TeX{} avoids by moving the whole block.
 \item[\texttt{The block \dots{} is inside a box}] (information) See ``In a box''.
 \item[\texttt{The image of the block \dots{} does not fit}] (warning) The message goes on: the text is too short to run on to the next page. The whole block moved to the next page and left the bottom of this one empty; see the third case in section~1. Shortening the image, lengthening the text or moving the block solves it.
+\item[\texttt{The page broke too early \dots}] (warning) A footnote in the lines that run at full width to the bottom of the page shortened the page, which broke before them: a page with a few lines is left before the image. The image is still set, at the top of the page after. Moving the footnote below the image, or into the next paragraph, solves it.
 \item[\texttt{The text of the block \dots{} ended before}] (warning) The message ends with ``the bottom of the page''. The text was measured long enough to run on to the next page, but ended on this one: its image is set after it. This should not happen; a figure in the text (a float, a very tall line) can cause it.
 \end{description}
 
 % =========================================================================
-\section{How it works}
+\section{How it works}\label{sec:works}
 
 The text of the block is typeset where it stands, in the main galley: nothing is boxed, which is what leaves page breaks, lists and tagging untouched.
 
@@ -202,7 +247,7 @@ The text of the block is typeset where it stands, in the main galley: nothing is
 \item The image is typeset twice: at the start of the environment, to measure it, with tagging suspended; then in the first line of the block, where it is placed in a box with no width, height or depth. An image that steps a counter therefore steps it twice.
 \item For each paragraph of the block, the \texttt{para/begin} hook reads the shape \LaTeX{} gave the paragraph --- a \cs{parshape} in a list ---, works out from \cs{pagetotal} how many of its lines still run along the image, and narrows those with a new \cs{parshape}.
 \item No page break may separate the lines along the image. To that end, \cs{interlinepenalties} forbids breaks inside a paragraph, \cs{nobreak} forbids them between paragraphs, and the penalties of lists and equations are set to 10\,000.
-\item When the room left on the page is too small for the image, the text of the block is set at full width in a box, which is then thrown away, to measure its height. Counters are put back afterwards, and labels, footnotes and index entries vanish with the box; anything else the text does globally is done twice.
+\item When the room left on the page is too small for the image, the text of the block is set at full width in a box, which is then thrown away, to measure its height. Counters are put back afterwards, and labels, footnotes and index entries vanish with the box; anything else the text does globally is done twice (section~\ref{sec:know}).
 \item A text too short to run on to the next page: the package makes \TeX{} break the page at its best earlier breakpoint --- before the heading, if a heading precedes the block --- and only then measures the room left.
 \item A long enough text: for each paragraph, the package counts the full-width lines that still fit on the page, forces the page break after the last of them with \cs{interlinepenalties}, and narrows the lines that follow, at the top of the next page. The image is set there when that page is shipped out, through the \texttt{shipout/foreground} hook.
 \item After a displayed equation, the remaining lines are worked out again from where the equation ended.

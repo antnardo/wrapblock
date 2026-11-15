@@ -27,8 +27,20 @@ Four properties that no existing wrapping package combines:
 - **tagged PDF**: with `\DocumentMetadata{tagging=on}`, the structure is the
   one the same text would have without the package.
 
-The contents of the block are read as an argument, so they cannot hold
-verbatim material. The package is written in expl3.
+Three things to know (section 2 of the documentation):
+
+- **the text should be at least as long as the image**: when it is shorter,
+  the block ends with vertical space down to the bottom of the image, since
+  the text after the block never runs beside it;
+- **near the bottom of a page, the text is typeset twice**, once at full
+  width in a box that is thrown away, to measure it. LaTeX counters are put
+  back, but any other global action is done twice: a TeX count, an expl3
+  integer, an `\immediate\write`, the first use of an acronym (glossaries,
+  acro). The key `defer=false` turns the measure off;
+- **no verbatim in the block**: its contents are read as an argument. Verbatim
+  material can be set beforehand in an `lrbox`.
+
+The package is written in expl3.
 
 ## Contents
 
