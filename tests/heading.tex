@@ -39,6 +39,9 @@
 \begin{document}
 \sweep{\kant[4-5]}
 \sweep{A short text, which moves with its heading.}
+% a footnote in the lines at full width: the page breaks early on the
+% first run, and right on the next ones (the room is kept in the .aux)
+\sweep{A text with a footnote\footnote{A note at the foot of the page.} in its first lines. \kant[4-5]}
 % a list right after the page break, and a block that opens an \item
 \sweep{\kant[4]\begin{itemize}\item one,\item two;\end{itemize}and after. \kant[5]}
 \let\case\icase

@@ -70,6 +70,11 @@
 \box_new:N  \l__wrapblock_measure_box
 \box_new:N  \l__wrapblock_labels_box
 \dim_new:N  \g__wrapblock_text_dim      % height of the text at full width
+\int_new:N  \g__wrapblock_block_int     % blocks so far, to name them in the .aux
+\dim_new:N  \g__wrapblock_goal_dim      % \pagegoal where a deferred block starts
+\dim_new:N  \g__wrapblock_short_dim     % room the footnotes will take there
+\prop_new:N \g__wrapblock_short_prop    % that room, read from the .aux
+\prop_new:N \g__wrapblock_short_new_prop % and as found in this run
 \bool_new:N \l__wrapblock_defer_bool
 \bool_new:N \l__wrapblock_allow_defer_bool
 
@@ -81,6 +86,45 @@
 % In a tagged PDF the image goes in a structure element made, empty, where
 % the block starts, so that it keeps its place in the reading order.
 \seq_new:N \l__wrapblock_done_seq
+% A footnote in the full-width lines of a deferred block shortens the page
+% after the lines were counted: the page breaks before the planned break,
+% at the end of a column whose \outputpenalty is not -10000. The room the
+% footnotes took is then written to the .aux, and the next run counts the
+% lines without it. A value found once is kept: the footnote may go below
+% the break on the next run.
+\cs_new_protected:cpn { wrapblock@short } #1#2
+  { \prop_gput:Nnn \g__wrapblock_short_prop {#1} {#2} }
+\hook_gput_code:nnn { build / column / before } { wrapblock }
+  {
+    \bool_lazy_and:nnT
+      { \g__wrapblock_wait_bool }
+      { \int_compare_p:nNn { \tex_outputpenalty:D } > { -10000 } }
+      {
+        \dim_set:Nn \l_tmpa_dim
+          {
+            \g__wrapblock_goal_dim - \tex_vsize:D
+            \box_if_empty:NF \footins
+              { + \box_ht:N \footins + \box_dp:N \footins + \tex_skip:D \footins }
+          }
+        \dim_compare:nNnF { \l_tmpa_dim } > { 0pt }
+          { \dim_set_eq:NN \l_tmpa_dim \baselineskip }
+        \prop_gput:Nee \g__wrapblock_short_new_prop
+          { \int_use:N \g__wrapblock_block_int }
+          { \dim_eval:n { \g__wrapblock_short_dim + \l_tmpa_dim } }
+      }
+  }
+\hook_gput_code:nnn { enddocument / afterlastpage } { wrapblock }
+  {
+    \iow_now:Nn \@auxout { \providecommand \wrapblock@short [2] { } }
+    \prop_map_inline:Nn \g__wrapblock_short_prop
+      {
+        \prop_if_in:NnF \g__wrapblock_short_new_prop {#1}
+          { \iow_now:Nn \@auxout { \wrapblock@short {#1} {#2} } }
+      }
+    \prop_map_inline:Nn \g__wrapblock_short_new_prop
+      { \iow_now:Nn \@auxout { \wrapblock@short {#1} {#2} } }
+  }
+
 \hook_gput_code:nnn { shipout / foreground } { wrapblock }
   { \seq_if_empty:NF \g__wrapblock_def_seq { \__wrapblock_overlays: } }
 \cs_new_protected:Npn \__wrapblock_overlays:
@@ -482,15 +526,20 @@
   {
     \int_compare:nNnTF { \g__wrapblock_ship_int } = { \g__wrapblock_origin_ship_int }
       {
+        % the footnotes to come, as the last run found them
+        \dim_set:Nn \l_tmpa_dim
+          { \g__wrapblock_short_dim - \g__wrapblock_goal_dim + \pagegoal }
+        \dim_compare:nNnT { \l_tmpa_dim } < { 0pt } { \dim_zero:N \l_tmpa_dim }
+        \dim_set:Nn \l_tmpa_dim { \pagegoal - \l_tmpa_dim }
         \dim_compare:nNnTF
-          { \l__wrapblock_base_dim + \box_dp:N \strutbox } > { \pagegoal }
+          { \l__wrapblock_base_dim + \box_dp:N \strutbox } > { \l_tmpa_dim }
           { \int_zero:N \l__wrapblock_full_int }
           {
             \int_set:Nn \l__wrapblock_full_int
               {
                 \fp_eval:n
                   {
-                    floor ( \dim_to_fp:n { \pagegoal - \l__wrapblock_base_dim - \box_dp:N \strutbox }
+                    floor ( \dim_to_fp:n { \l_tmpa_dim - \l__wrapblock_base_dim - \box_dp:N \strutbox }
                             / \dim_to_fp:n { \baselineskip } ) + 1
                   }
               }
@@ -791,8 +840,8 @@
 \msg_new:nnn { wrapblock } { early }
   { The~page~broke~too~early~in~the~text~of~the~block~on~input~line~
     \msg_line_number:,~before~its~image~was~set:~a~footnote~in~the~
-    full-width~lines~shortened~the~page.~A~page~with~a~few~lines~is~left~
-    before~the~image.~Moving~the~footnote~below~the~image~solves~it. }
+    full-width~lines~shortened~the~page,~and~a~page~with~a~few~lines~is~
+    left~before~the~image.~Rerun~LaTeX~to~get~it~right. }
 \msg_new:nnn { wrapblock } { alone }
   { The~text~of~the~block~on~input~line~\msg_line_number:\ ended~before~
     the~bottom~of~the~page:~its~image~is~set~after~it. }
@@ -801,6 +850,7 @@
 \NewDocumentEnvironment { wrapblock } { O{} +m +b }
   {
     \par
+    \int_gincr:N \g__wrapblock_block_int
     \keys_set:nn { wrapblock } {#1}
     \tl_gset:Nn \g__wrapblock_img_tl {#2}
     \dim_gset_eq:NN \g__wrapblock_img_width_dim \l__wrapblock_width_dim
@@ -857,6 +907,10 @@
         \int_gset_eq:NN \g__wrapblock_origin_ship_int \g__wrapblock_ship_int
         \dim_gset:Nn \g__wrapblock_bottom_dim
           { \topskip - \box_ht:N \strutbox + \g__wrapblock_height_dim }
+        \dim_gset_eq:NN \g__wrapblock_goal_dim \pagegoal
+        \prop_get:NeNTF \g__wrapblock_short_prop { \int_use:N \g__wrapblock_block_int } \l_tmpa_tl
+          { \dim_gset:Nn \g__wrapblock_short_dim { \l_tmpa_tl } }
+          { \dim_gzero:N \g__wrapblock_short_dim }
         \__wrapblock_placeholder:
       }
       {

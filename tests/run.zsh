@@ -42,6 +42,7 @@ for engine in pdflatex lualatex; do
   for mode in plain tag; do
     tag=""; [[ $mode == tag ]] && tag='\def\TAGGING{}'
     job=heading-$engine-$mode
+    rm -f $job.aux   # the room kept for footnotes is found again from scratch
     for i in 1 2 3; do
       $engine -interaction=nonstopmode -jobname=$job "$tag\\input{heading}" >/dev/null 2>&1
     done
@@ -50,7 +51,7 @@ for engine in pdflatex lualatex; do
       pdftotext -f $p -l $p $job.pdf - | grep -v '^[[:space:]]*[0-9]*[[:space:]]*$' |
         tail -1 | grep -q 'high$' && alone=$((alone + 1))
     done
-    printf "%-26s errors=%s headings alone=%s  " $job $(grep -c '^!' $job.log) $alone
+    printf "%-26s errors=%s headings alone=%s early=%s  " $job $(grep -c '^!' $job.log) $alone $(grep -c 'broke too early' $job.log)
     python3 collisions.py $job.pdf | head -1
     if [[ $mode == tag ]] && (( $+commands[verapdf] )); then
       local failed=$(verapdf --flavour ua2 --format mrr $job.pdf 2>/dev/null |
