@@ -1,0 +1,19 @@
+% A heading followed by a block whose image is a little too tall for the
+% room left: the heading must move with the block, never stay alone at the
+% bottom of the page. The same page is repeated with image heights around
+% the limit; run.zsh checks that no page ends with a heading.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{kantlipsum}
+\usepackage{wrapblock}
+\newcommand\case[1]{%
+  \clearpage
+  \kant[1-2]
+  \section{Image #1 high}
+  \begin{wrapblock}{\includegraphics[height=#1]{example-image-9x16}}
+  \kant[4-5]
+  \end{wrapblock}}
+\begin{document}
+\case{7.0cm}\case{7.4cm}\case{7.6cm}\case{7.8cm}\case{7.9cm}\case{8.0cm}
+\case{8.1cm}\case{8.2cm}\case{8.4cm}\case{8.8cm}\case{9.5cm}\case{11cm}
+\end{document}

@@ -44,6 +44,7 @@
 \int_new:N  \g__wrapblock_save_endpar_int
 \int_new:N  \l__wrapblock_lines_int
 \dim_new:N  \l__wrapblock_base_dim
+\dim_new:N  \l__wrapblock_rule_dim
 \dim_new:N  \l__wrapblock_i_dim
 \dim_new:N  \l__wrapblock_l_dim
 \dim_new:N  \l__wrapblock_ni_dim
@@ -441,18 +442,23 @@
 % tall as the image makes the page overflow, and a breakpoint after it,
 % which TeX cannot take on a full page, makes TeX cut now at its best
 % earlier break: before a heading, which forbids a break after itself,
-% or before the previous paragraph. A negative skip then gives the room
-% back, and \pagetotal measures the page the block starts on.
+% or before the previous paragraph. The rule is taller than the image by
+% the shrink of the page: otherwise, when the image is only a little too
+% tall, the page still fits by shrinking its glue, TeX takes the
+% breakpoint after the rule, and a heading is left alone at the bottom.
+% A negative skip then gives the room back, and \pagetotal measures the
+% page the block starts on.
 \cs_new_protected:Npn \__wrapblock_need_space:
   {
     \dim_set_eq:NN \l__wrapblock_base_dim \prevdepth
     \legacy_if:nF { @nobreak } { \tex_penalty:D 0 ~ }
-    \tex_hrule:D height \dim_eval:n { \g__wrapblock_height_dim + \baselineskip }
-      depth 0pt width 0pt \scan_stop:
+    \dim_set:Nn \l__wrapblock_rule_dim
+      { \g__wrapblock_height_dim + \baselineskip + \tex_pageshrink:D + 1sp }
+    \tex_hrule:D height \l__wrapblock_rule_dim depth 0pt width 0pt \scan_stop:
     \tex_penalty:D 9999 ~
     \tex_par:D
     \tex_penalty:D 10000 ~
-    \skip_vertical:n { - \g__wrapblock_height_dim - \baselineskip }
+    \skip_vertical:n { - \l__wrapblock_rule_dim }
     \tex_prevdepth:D \l__wrapblock_base_dim
   }
 

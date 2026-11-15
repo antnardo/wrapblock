@@ -38,4 +38,14 @@ for engine in pdflatex lualatex; do
   compile limits-$engine-plainimg-tag '\def\TAGGING{}\def\PLAINIMG{}' limits 2
   compile contexts-$engine "" contexts 2
   compile contexts-$engine-twocol '\def\TWOCOL{}' contexts 2
+  # a heading left alone at the bottom of a page
+  $engine -interaction=nonstopmode -jobname=heading-$engine heading >/dev/null 2>&1
+  $engine -interaction=nonstopmode -jobname=heading-$engine heading >/dev/null 2>&1
+  alone=0
+  for p in $(seq 1 $(pdfinfo heading-$engine.pdf | awk '/^Pages/{print $2}')); do
+    pdftotext -f $p -l $p heading-$engine.pdf - | grep -v '^[[:space:]]*[0-9]*[[:space:]]*$' |
+      tail -1 | grep -q 'high$' && alone=$((alone + 1))
+  done
+  printf "%-26s errors=%s headings alone at the bottom of a page: %s\n" heading-$engine \
+    $(grep -c '^!' heading-$engine.log) $alone
 done
