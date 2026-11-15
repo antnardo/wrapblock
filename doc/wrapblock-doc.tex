@@ -53,7 +53,13 @@ and the text after the list goes on wrapping, down to the bottom of the image an
 
 The text after the environment is full width, however long the block is: when the text of the block is shorter than the image, vertical space is added down to the bottom of the image.
 
-A block never breaks across pages while it runs along the image: when there is not enough room left at the bottom of the page for the image, the whole block starts on the next page, together with the heading that precedes it. Below the image, the text of the block breaks like any other text.
+The image and the lines beside it are never split by a page break. Near the bottom of a page, three cases arise:
+\begin{itemize}
+\item the image fits: the text wraps around it, and what is left of the text runs at full width on the next page;
+\item the image does not fit, and the text is long enough to fill the bottom of the page and run on: the text runs at full width to the bottom of the page, and the image goes to the top of the next page, where the text wraps around it;
+\item the image does not fit, and the text is too short to run on to the next page: at full width it would end on this page, and leave the image alone on the next one. The whole block then moves to the next page, together with the heading that precedes it, and a warning in the \texttt{.log} says so: the bottom of the page is left empty, and the author may want to change something.
+\end{itemize}
+Below the image, the text of the block breaks like any other text. The cases are shown, with long, medium and short texts, in \texttt{mwe-pagebreak.tex}, in the \texttt{examples} folder.
 
 The package does only this. There is no image wrapped in the middle of a paragraph, no text flowing around a shape, no floating image: for those, see \pkg{wrapfig2}, \pkg{wrapstuff}, \pkg{cutwin} or \pkg{picinpar}. Section~\ref{sec:others} explains why none of them covers the four properties above.
 
@@ -70,6 +76,8 @@ The package does only this. There is no image wrapped in the middle of a paragra
 
 \begin{docEnvironment}{wrapblock}{\oarg{keys}\marg{image}}
   Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The environment starts a new paragraph, and so does the text after it.
+
+  The contents are read as an argument, before they are typeset: they cannot hold verbatim material (\cs{verb}, \env{verbatim}).
 \end{docEnvironment}
 
 \begin{docCommand}{wrapblockset}{\marg{keys}}
@@ -153,7 +161,7 @@ The text of a box --- \cs{parbox}, \env{minipage}, \texttt{p} column of a table 
 
 \begin{description}
 \item[In running text and in lists] All of the above.
-\item[In \texttt{twocolumn} mode and in \env{multicols}] The block wraps its text within its column, and does not break from one column to the next while it runs along the image.
+\item[In \texttt{twocolumn} mode and in \env{multicols}] The block wraps its text within its column, and does not break from one column to the next while it runs along the image. The image is never deferred there: when it does not fit at the bottom of the column, the whole block moves to the next one.
 \item[In a box] In a \env{minipage}, a \cs{parbox}, a \env{tcolorbox}\dots, the package cannot tell where it stands, and no page breaks there anyway. The text is then set in a \env{minipage} beside the image, aligned on its first line, without running below the image; an information message in the \texttt{.log} says so.
 \item[In another block] Blocks do not nest: this is an error.
 \end{description}
@@ -167,6 +175,8 @@ With \verb|\DocumentMetadata{tagging=on}|, the text of the block is typeset in t
 \begin{wrapblock}{\includegraphics[width=4cm, alt={The ball}]{ball}}
 \end{verbatim}
 
+A deferred image, set at the top of the next page, keeps its place in the reading order: the package makes an empty structure element where the block starts, and puts the image into it, in a \texttt{P} element, when its page is shipped out. It therefore comes before the text it goes with, as when it is not deferred.
+
 An image of another kind --- \env{tikzpicture}, \env{tabular}, \cs{fbox} --- is tagged exactly as it would be at the start of a paragraph without the package; describing it is left to the author, as it is without the package.
 
 The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard=ua-2|, with an \cs{includegraphics}, a \env{tabular}, a \env{tikzpicture}, a \cs{parbox}, a \env{minipage} and an \cs{fbox} as image: tagpdf gives no more warnings than with the same image at the start of an ordinary paragraph, and the structure tree is the same with pdf\LaTeX{} and Lua\LaTeX. veraPDF~1.30 finds the tagged example \texttt{examples/mwe-tagged.tex} conformant to PDF/UA-2 with both engines, and finds nothing in the tests that the same document does not give without the package; with pdf\LaTeX, a footnote breaks clause~8.2.2, with or without the package. The PDF/UA conformance of a whole document does not depend on this package only.
@@ -179,6 +189,8 @@ The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard
 \item[\texttt{A box of width \dots{} sits beside the image}] (warning) A box wider than the room left beside the image; see Boxes above.
 \item[\texttt{The block \dots{} moved to a new page}] (warning) The text beside the image moved to another page while it was set, which only very large insertions (footnotes, floats) can cause. The wrapping may then be off by a few lines. The tests could not trigger this case, which \TeX{} avoids by moving the whole block.
 \item[\texttt{The block \dots{} is inside a box}] (information) See ``In a box''.
+\item[\texttt{The image of the block \dots{} does not fit}] (warning) The message goes on: the text is too short to run on to the next page. The whole block moved to the next page and left the bottom of this one empty; see the third case in section~1. Shortening the image, lengthening the text or moving the block solves it.
+\item[\texttt{The text of the block \dots{} ended before}] (warning) The message ends with ``the bottom of the page''. The text was measured long enough to run on to the next page, but ended on this one: its image is set after it. This should not happen; a figure in the text (a float, a very tall line) can cause it.
 \end{description}
 
 % =========================================================================
@@ -190,7 +202,9 @@ The text of the block is typeset where it stands, in the main galley: nothing is
 \item The image is typeset twice: at the start of the environment, to measure it, with tagging suspended; then in the first line of the block, where it is placed in a box with no width, height or depth. An image that steps a counter therefore steps it twice.
 \item For each paragraph of the block, the \texttt{para/begin} hook reads the shape \LaTeX{} gave the paragraph --- a \cs{parshape} in a list ---, works out from \cs{pagetotal} how many of its lines still run along the image, and narrows those with a new \cs{parshape}.
 \item No page break may separate the lines along the image. To that end, \cs{interlinepenalties} forbids breaks inside a paragraph, \cs{nobreak} forbids them between paragraphs, and the penalties of lists and equations are set to 10\,000.
-\item When the room left on the page is too small for the image, or when the page already holds more than it can take, the package makes \TeX{} break the page at its best earlier breakpoint --- before the heading, if a heading precedes the block --- and only then measures the room left.
+\item When the room left on the page is too small for the image, the text of the block is set at full width in a box, which is then thrown away, to measure its height. Counters are put back afterwards, and labels, footnotes and index entries vanish with the box; anything else the text does globally is done twice.
+\item A text too short to run on to the next page: the package makes \TeX{} break the page at its best earlier breakpoint --- before the heading, if a heading precedes the block --- and only then measures the room left.
+\item A long enough text: for each paragraph, the package counts the full-width lines that still fit on the page, forces the page break after the last of them with \cs{interlinepenalties}, and narrows the lines that follow, at the top of the next page. The image is set there when that page is shipped out, through the \texttt{shipout/foreground} hook.
 \item After a displayed equation, the remaining lines are worked out again from where the equation ended.
 \end{itemize}
 

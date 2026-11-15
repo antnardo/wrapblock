@@ -38,14 +38,25 @@ for engine in pdflatex lualatex; do
   compile limits-$engine-plainimg-tag '\def\TAGGING{}\def\PLAINIMG{}' limits 2
   compile contexts-$engine "" contexts 2
   compile contexts-$engine-twocol '\def\TWOCOL{}' contexts 2
-  # a heading left alone at the bottom of a page
-  $engine -interaction=nonstopmode -jobname=heading-$engine heading >/dev/null 2>&1
-  $engine -interaction=nonstopmode -jobname=heading-$engine heading >/dev/null 2>&1
-  alone=0
-  for p in $(seq 1 $(pdfinfo heading-$engine.pdf | awk '/^Pages/{print $2}')); do
-    pdftotext -f $p -l $p heading-$engine.pdf - | grep -v '^[[:space:]]*[0-9]*[[:space:]]*$' |
-      tail -1 | grep -q 'high$' && alone=$((alone + 1))
+  # images near the bottom of a page: a heading never left alone
+  for mode in plain tag; do
+    tag=""; [[ $mode == tag ]] && tag='\def\TAGGING{}'
+    job=heading-$engine-$mode
+    for i in 1 2 3; do
+      $engine -interaction=nonstopmode -jobname=$job "$tag\\input{heading}" >/dev/null 2>&1
+    done
+    alone=0
+    for p in $(seq 1 $(pdfinfo $job.pdf | awk '/^Pages/{print $2}')); do
+      pdftotext -f $p -l $p $job.pdf - | grep -v '^[[:space:]]*[0-9]*[[:space:]]*$' |
+        tail -1 | grep -q 'high$' && alone=$((alone + 1))
+    done
+    printf "%-26s errors=%s headings alone=%s  " $job $(grep -c '^!' $job.log) $alone
+    python3 collisions.py $job.pdf | head -1
+    if [[ $mode == tag ]] && (( $+commands[verapdf] )); then
+      local failed=$(verapdf --flavour ua2 --format mrr $job.pdf 2>/dev/null |
+        grep -o 'clause="[^"]*" testNumber="[0-9]*" status="failed"' |
+        sed 's/clause="\([^"]*\)" testNumber="\([0-9]*\)".*/\1-\2/' | tr '\n' ' ')
+      printf "%-26s PDF/UA-2 failed clauses: %s\n" "" "${failed:-none}"
+    fi
   done
-  printf "%-26s errors=%s headings alone at the bottom of a page: %s\n" heading-$engine \
-    $(grep -c '^!' heading-$engine.log) $alone
 done

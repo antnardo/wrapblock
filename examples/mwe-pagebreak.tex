@@ -1,41 +1,38 @@
-% Minimal example: page breaks.
-% Cases 1 and 2 start from the same page and differ only by the height of
-% the image (7 cm, then 8 cm).
-%  1. The image just fits at the bottom of the page: it stays there with the
-%     lines beside it, and the rest of the block runs full width on the next
-%     page.
-%  2. The image does not fit: the block moves to the next page, together with
-%     the heading before it.
-%  3. A long block: the text below the image runs on over several pages.
+% Minimal example: a block near the bottom of a page.
+% Every case starts from the same page; the image is 7 cm high (it fits
+% at the bottom of the page) or 8 cm high (it does not).
+%  1. Long text, the image fits: the text wraps around the image on this
+%     page, and runs at full width on the next one.
+%  2. Long text, the image does not fit: the text runs at full width to the
+%     bottom of this page, and wraps around the image at the top of the
+%     next one.
+%  3. Text of medium length, the image fits: the text wraps around it, and
+%     the block ends on this page.
+%  4. The same text, the image does not fit: at full width, the text would
+%     end on this page and leave the image alone on the next one. The whole
+%     block moves to the next page, with its heading, and the log says so.
+%  5. and 6. A short text: the same as 3 and 4.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{kantlipsum}
 \usepackage{wrapblock}
 \setlength{\emergencystretch}{1em} % the lines beside the images are narrow
+\newcommand\case[3]{% title, image height, text
+  \clearpage
+  \kant[1-2]
+  \section{#1}
+  \begin{wrapblock}{\includegraphics[height=#2]{example-image-9x16}}
+  #3
+  \end{wrapblock}
+  The text after the block.}
+\newcommand\longtext{\kant[4-6]}
+\newcommand\mediumtext{\kant[14]}
+\newcommand\shorttext{A short text of two lines beside the image: when the image does not fit at the bottom of the page, the whole block moves.}
 \begin{document}
-
-\kant[1-2]
-
-\section{Case 1: the image fits}
-
-\begin{wrapblock}{\includegraphics[height=7cm]{example-image-9x16}}
-\kant[4-6]
-\end{wrapblock}
-
-\clearpage
-\kant[1-2]
-
-\section{Case 2: one centimetre taller}
-
-\begin{wrapblock}{\includegraphics[height=8cm]{example-image-9x16}}
-\kant[4-6]
-\end{wrapblock}
-
-\clearpage
-\section{Case 3: a long block}
-
-\begin{wrapblock}[side=l]{\includegraphics[width=4cm]{example-image-b}}
-\kant[9-14]
-\end{wrapblock}
-
+\case{Long text, the image fits}{7cm}{\longtext}
+\case{Long text, the image does not fit}{8cm}{\longtext}
+\case{Medium text, the image fits}{7cm}{\mediumtext}
+\case{Medium text, the image does not fit}{8cm}{\mediumtext}
+\case{Short text, the image fits}{7cm}{\shorttext}
+\case{Short text, the image does not fit}{8cm}{\shorttext}
 \end{document}

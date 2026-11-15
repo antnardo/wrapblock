@@ -19,13 +19,16 @@ Four properties that no existing wrapping package combines:
 - **lists**: a list beside the image is narrowed, at any depth, and the block
   may itself open an `\item`;
 - **page breaks**: the image and the lines beside it stay on the same page;
-  when there is no room, the block moves to the next page, together with the
-  heading before it;
+  when the image does not fit at the bottom of a page, the text fills that
+  bottom at full width and the image goes to the top of the next page; a
+  text too short for that moves with its image to the next page, together
+  with the heading before it, and the log says so;
 - **both engines**: pdfLaTeX and LuaLaTeX, with the same output;
 - **tagged PDF**: with `\DocumentMetadata{tagging=on}`, the structure is the
   one the same text would have without the package.
 
-The package is written in expl3.
+The contents of the block are read as an argument, so they cannot hold
+verbatim material. The package is written in expl3.
 
 ## Contents
 

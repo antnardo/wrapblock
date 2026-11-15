@@ -1,19 +1,46 @@
 % A heading followed by a block whose image is a little too tall for the
-% room left: the heading must move with the block, never stay alone at the
+% room left. With a long text, the text fills the bottom of the page and
+% the image is deferred to the next one; with a short text, the heading
+% moves with the block. Either way the heading never stays alone at the
 % bottom of the page. The same page is repeated with image heights around
-% the limit; run.zsh checks that no page ends with a heading.
+% the limit; run.zsh checks that no page ends with a heading, and that no
+% word overlaps an image (collisions.py). The last two sweeps put a list
+% right after the page break, the last one in a block that opens an item.
+% Tagged: \def\TAGGING{}.
+\ifdefined\TAGGING
+  \DocumentMetadata{lang=en, pdfversion=2.0, pdfstandard=ua-2, tagging=on}
+\fi
 \documentclass{article}
+\title{wrapblock tests}
 \usepackage{graphicx}
 \usepackage{kantlipsum}
 \usepackage{wrapblock}
-\newcommand\case[1]{%
+\newcommand\case[2]{% image height, text
   \clearpage
   \kant[1-2]
   \section{Image #1 high}
-  \begin{wrapblock}{\includegraphics[height=#1]{example-image-9x16}}
-  \kant[4-5]
+  \begin{wrapblock}{\fbox{\parbox[t][#1][s]{4cm}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+  #2
   \end{wrapblock}}
+\newcommand\icase[2]{% the same, in a block that opens an \item
+  \clearpage
+  \kant[1-2]
+  \section{Image #1 high}
+  \begin{enumerate}
+  \item \begin{wrapblock}{\fbox{\parbox[t][#1][s]{4cm}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+  #2
+  \end{wrapblock}
+  \item Second.
+  \end{enumerate}}
+\newcommand\sweep[1]{%
+  \case{7.0cm}{#1}\case{7.4cm}{#1}\case{7.6cm}{#1}\case{7.8cm}{#1}%
+  \case{7.9cm}{#1}\case{8.0cm}{#1}\case{8.1cm}{#1}\case{8.2cm}{#1}%
+  \case{8.4cm}{#1}\case{8.8cm}{#1}\case{9.5cm}{#1}\case{11cm}{#1}}
 \begin{document}
-\case{7.0cm}\case{7.4cm}\case{7.6cm}\case{7.8cm}\case{7.9cm}\case{8.0cm}
-\case{8.1cm}\case{8.2cm}\case{8.4cm}\case{8.8cm}\case{9.5cm}\case{11cm}
+\sweep{\kant[4-5]}
+\sweep{A short text, which moves with its heading.}
+% a list right after the page break, and a block that opens an \item
+\sweep{\kant[4]\begin{itemize}\item one,\item two;\end{itemize}and after. \kant[5]}
+\let\case\icase
+\sweep{\kant[4]\begin{itemize}\item one,\item two;\end{itemize}and after. \kant[5]}
 \end{document}
