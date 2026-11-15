@@ -77,6 +77,7 @@
 \prop_new:N \g__wrapblock_short_new_prop % and as found in this run
 \bool_new:N \l__wrapblock_defer_bool
 \bool_new:N \l__wrapblock_allow_defer_bool
+\bool_new:N \g__wrapblock_breakpar_bool  % this paragraph ends the page
 
 \hook_gput_code:nnn { shipout / after } { wrapblock }
   { \int_gincr:N \g__wrapblock_ship_int }
@@ -563,13 +564,7 @@
       {
         \int_gset:Nn \g__wrapblock_full_end_int
           { \tex_prevgraf:D + \l__wrapblock_full_int }
-        % TeX adds the club, widow and broken penalties to the -10000
-        % that ends the page, which then no longer forces the break.
-        \int_set:Nn \clubpenalty   { 0 }
-        \int_set:Nn \widowpenalty  { 0 }
-        \int_set:Nn \brokenpenalty { 0 }
-        \tex_clubpenalties:D  0 ~
-        \tex_widowpenalties:D 0 ~
+        \bool_gset_true:N \g__wrapblock_breakpar_bool
         \__wrapblock_shape:Nnnn #1 { \tex_prevgraf:D } { \l__wrapblock_full_int } { \topskip }
       }
     \int_set:Nn \predisplaypenalty  { 10000 }
@@ -623,6 +618,23 @@
   {
     \tex_everydisplay:D \exp_after:wN
       { \tex_the:D \tex_everydisplay:D \__wrapblock_display_hook: }
+  }
+
+% TeX adds the club, widow and broken penalties to the -10000 that ends
+% the page, which then no longer forces the break. They are cleared at the
+% end of the paragraph, just before it is broken into lines: at its start,
+% the \everypar of LaTeX would set \clubpenalty again after the hook.
+\hook_gput_code:nnn { para / end } { wrapblock }
+  {
+    \bool_lazy_and:nnT { \l__wrapblock_outer_bool } { \g__wrapblock_breakpar_bool }
+      {
+        \bool_gset_false:N \g__wrapblock_breakpar_bool
+        \int_set:Nn \clubpenalty   { 0 }
+        \int_set:Nn \widowpenalty  { 0 }
+        \int_set:Nn \brokenpenalty { 0 }
+        \tex_clubpenalties:D  0 ~
+        \tex_widowpenalties:D 0 ~
+      }
   }
 
 \hook_gput_code:nnn { para / after } { wrapblock }
