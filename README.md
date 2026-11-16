@@ -47,7 +47,7 @@ The package is written in expl3.
 | File | Role |
 | --- | --- |
 | `wrapblock.sty` | the package |
-| `doc/wrapblock-doc.tex`, `doc/wrapblock-doc.pdf` | the documentation; it compiles with both engines |
+| `doc/wrapblock-doc.tex`, `doc/wrapblock-doc.pdf` | the documentation, which ends with the whole code, commented; it compiles with both engines, from `doc/`, with `wrapblock.sty` one level up |
 | `examples/` | minimal examples, one per property: `mwe-basic`, `mwe-lists`, `mwe-pagebreak`, `mwe-tagged`; `zsh examples/build.zsh` compiles them with both engines |
 | `tests/` | the tests: `zsh tests/run.zsh` compiles each one with both engines, plain and tagged, and reports errors, tagging warnings and text overlapping an image; it needs `python3` and `pdftotext` (poppler), and checks the tagged builds against PDF/UA-2 when `verapdf` is in the PATH |
 

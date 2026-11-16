@@ -12,10 +12,13 @@
 %%
 %% This work has the LPPL maintenance status `maintained'.
 %% The Current Maintainer of this work is Antonin Marchand.
+% <ident>
 \NeedsTeXFormat{LaTeX2e}[2023-06-01]
 \ProvidesExplPackage{wrapblock}{2026-11-15}{0.1}
   {Closed block with an image beside its text}
+% </ident>
 
+% <state>
 % ---------------------------------------------------------------- state
 % All positions are in page coordinates: the value \pagetotal would have
 % at that point, from the top of the text area.
@@ -57,6 +60,8 @@
 \bool_new:N \l__wrapblock_inbox_bool    % this block sits in a box
 \tl_new:N   \l__wrapblock_shape_tl
 \tl_new:N   \l__wrapblock_pen_tl
+% </state>
+% <statedefer>
 % A deferred image: it did not fit at the bottom of the page, and the text
 % is long enough to fill that bottom at full width. It goes to the top of
 % the next page, and the lines there are narrowed.
@@ -78,15 +83,15 @@
 \bool_new:N \l__wrapblock_defer_bool
 \bool_new:N \l__wrapblock_allow_defer_bool
 \bool_new:N \g__wrapblock_breakpar_bool  % this paragraph ends the page
+\seq_new:N \l__wrapblock_done_seq
+% </statedefer>
 
+% <shipcount>
 \hook_gput_code:nnn { shipout / after } { wrapblock }
   { \int_gincr:N \g__wrapblock_ship_int }
+% </shipcount>
 
-% Deferred images are set on the page they belong to as it is shipped,
-% at the top of the text area: the lines beside them are already narrowed.
-% In a tagged PDF the image goes in a structure element made, empty, where
-% the block starts, so that it keeps its place in the reading order.
-\seq_new:N \l__wrapblock_done_seq
+% <aux>
 % A footnote in the full-width lines of a deferred block shortens the page
 % after the lines were counted: the page breaks before the planned break,
 % at the end of a column whose \outputpenalty is not -10000. The room the
@@ -125,7 +130,13 @@
     \prop_map_inline:Nn \g__wrapblock_short_new_prop
       { \iow_now:Nn \@auxout { \wrapblock@short {#1} {#2} } }
   }
+% </aux>
 
+% <overlay>
+% Deferred images are set on the page they belong to as it is shipped,
+% at the top of the text area: the lines beside them are already narrowed.
+% In a tagged PDF the image goes in a structure element made, empty, where
+% the block starts, so that it keeps its place in the reading order.
 \hook_gput_code:nnn { shipout / foreground } { wrapblock }
   { \seq_if_empty:NF \g__wrapblock_def_seq { \__wrapblock_overlays: } }
 \cs_new_protected:Npn \__wrapblock_overlays:
@@ -184,7 +195,9 @@
         \cs_undefine:c { g__wrapblock_def_ #7 _data_tl }
       }
   }
+% </overlay>
 
+% <keys>
 % ---------------------------------------------------------------- keys
 \keys_define:nn { wrapblock }
   {
@@ -203,7 +216,9 @@
     defer .default:n  = true ,
   }
 \NewDocumentCommand \wrapblockset { m } { \keys_set:nn { wrapblock } {#1} }
+% </keys>
 
+% <baseline>
 % ---------------------------------------------------------------- helpers
 % Baseline of the first line of the paragraph being started.
 \cs_new_protected:Npn \__wrapblock_first_baseline:N #1
@@ -216,7 +231,9 @@
           { \dim_set:Nn #1 { \pagetotal + \box_ht:N \strutbox } }
       }
   }
+% </baseline>
 
+% <checkship>
 % The region moved to a new page while it was running. This happens only
 % when insertions (footnotes) shrank the page under it. Assume it now sits
 % at the top of the page and say so.
@@ -235,7 +252,9 @@
     while~its~text~was~set.~Its~wrapping~may~be~off~by~some~lines. }
 \msg_new:nnn { wrapblock } { nested }
   { wrapblock~blocks~cannot~be~nested. }
+% </checkship>
 
+% <listpen>
 \cs_new_protected:Npn \__wrapblock_list_penalties_off:
   {
     \int_gset:Nn \@itempenalty     { 10000 }
@@ -253,7 +272,9 @@
     \bool_gset_false:N \g__wrapblock_active_bool
     \__wrapblock_list_penalties_restore:
   }
+% </listpen>
 
+% <shape>
 % Set \parshape so that the lines from index #1 (0 = first line of the
 % paragraph) whose top lies above the bottom of the image are narrowed.
 % #2 is the baseline of line #1.
@@ -353,7 +374,9 @@
       \int_eval:n { \l__wrapblock_lines_int + 1 } \c_space_tl
       \l__wrapblock_pen_tl \int_use:N \interlinepenalty \scan_stop:
   }
+% </shape>
 
+% <build>
 % The image is built twice: once to be measured at the start of the
 % block, once where it is placed. Built outside a paragraph, a box with
 % text in it (\fbox, tabular, \parbox) would open its structure at the
@@ -394,7 +417,9 @@
     \box_use_drop:N \l_tmpa_box
     \bool_gset_false:N \g__wrapblock_pending_bool
   }
+% </build>
 
+% <labels>
 % A block that opens an \item: the labels, which LaTeX sets at the start
 % of the first line, would follow the text past a left image and land on
 % it. Move them back to their place in the margin.
@@ -413,7 +438,9 @@
           }
       }
   }
+% </labels>
 
+% <boxcheck>
 % A \parbox, minipage or p cell is not wrapped: its text keeps the width
 % it was given. Say so when that width does not fit beside the image.
 \cs_new_protected:Npn \__wrapblock_box_check:
@@ -443,7 +470,9 @@
 \msg_new:nnn { wrapblock } { box }
   { A~box~of~width~#1~on~input~line~\msg_line_number:\ sits~beside~the~
     image,~where~only~#2~is~left.~The~text~of~a~box~is~not~wrapped. }
+% </boxcheck>
 
+% <parahooks>
 % ---------------------------------------------------------------- hooks
 \hook_gput_code:nnn { para / before } { wrapblock }
   {
@@ -460,7 +489,9 @@
         \__wrapblock_para_begin:
       }
   }
+% </parahooks>
 
+% <unstale>
 % TeX clears \parshape at the end of a paragraph, but locally. A paragraph
 % ended inside a deeper group (an item that opens a nested list) leaves
 % its narrowed shape behind, and the next paragraph gets it back. It is
@@ -483,7 +514,9 @@
           }
       }
   }
+% </unstale>
 
+% <parabegin>
 \cs_new_protected:Npn \__wrapblock_para_begin:
   {
     \bool_if:NT \g__wrapblock_active_bool
@@ -517,7 +550,9 @@
           % past the image: the shape is the one LaTeX gave, keep it
           { \__wrapblock_stop: }
   }
+% </parabegin>
 
+% <deferpara>
 % A deferred image, before the page break. #1 is \prg_do_nothing: at the
 % start of a paragraph, \tex_global:D after a display. The baseline of the
 % next line is in \l__wrapblock_base_dim, and \prevgraf lines are set.
@@ -570,7 +605,9 @@
     \int_set:Nn \predisplaypenalty  { 10000 }
     \int_set:Nn \postdisplaypenalty { 10000 }
   }
+% </deferpara>
 
+% <commit>
 % The image goes to the top of the page shipped after #1 pages.
 \cs_new_protected:Npn \__wrapblock_commit:n #1
   {
@@ -590,7 +627,9 @@
       }
     \seq_gput_right:Ne \g__wrapblock_def_seq { \int_use:N \g__wrapblock_def_int }
   }
+% </commit>
 
+% <display>
 % After a displayed equation the paragraph goes on; its remaining lines
 % are re-measured from where the display actually ended.
 \cs_new_protected:Npn \__wrapblock_after_display:
@@ -619,7 +658,9 @@
     \tex_everydisplay:D \exp_after:wN
       { \tex_the:D \tex_everydisplay:D \__wrapblock_display_hook: }
   }
+% </display>
 
+% <paraend>
 % TeX adds the club, widow and broken penalties to the -10000 that ends
 % the page, which then no longer forces the break. They are cleared at the
 % end of the paragraph, just before it is broken into lines: at its start,
@@ -636,7 +677,9 @@
         \tex_widowpenalties:D 0 ~
       }
   }
+% </paraend>
 
+% <paraafter>
 \hook_gput_code:nnn { para / after } { wrapblock }
   {
     \bool_if:NT \g__wrapblock_active_bool
@@ -688,7 +731,9 @@
           { \__wrapblock_stop: }
       }
   }
+% </paraafter>
 
+% <inbox>
 % In a box (minipage, \parbox, tcolorbox) \pagetotal says nothing of the
 % position, and no page can break anyway: the text goes in a minipage and
 % the image beside it, aligned on the first line.
@@ -717,14 +762,18 @@
 \msg_new:nnn { wrapblock } { inbox }
   { The~block~on~input~line~\msg_line_number:\ is~inside~a~box:~its~text~
     is~set~beside~the~image,~without~wrapping~under~it. }
+% </inbox>
 
+% <room>
 % The room left on the page. Right after a heading, the space below it is
 % not on the page yet: \pagetotal counts it only when the next paragraph
 % starts. It is the last item of the list, and \lastskip gives it. When
 % the page itself ends with glue, it is subtracted twice: the error only
 % makes the image less likely to fit.
 \cs_new:Npn \__wrapblock_room: { ( \pagegoal - \pagetotal - \lastskip ) }
+% </room>
 
+% <needspace>
 % Not enough room left for the image, or the page already holds more than
 % it can (TeX cuts it only at the next legal break). An invisible rule as
 % tall as the image makes the page overflow, and a breakpoint after it,
@@ -749,7 +798,9 @@
     \skip_vertical:n { - \l__wrapblock_rule_dim }
     \tex_prevdepth:D \l__wrapblock_base_dim
   }
+% </needspace>
 
+% <decide>
 % The image does not fit at the bottom of the page. With the text long
 % enough to fill that bottom at full width and run on to the next page,
 % the image is deferred to the top of that page. With a shorter text, the
@@ -789,7 +840,9 @@
     at~the~bottom~of~the~page,~and~its~text~is~too~short~to~run~on~to~
     the~next~page:~the~whole~block~moves~to~the~next~page,~and~leaves~
     room~at~the~bottom~of~this~one. }
+% </decide>
 
+% <measure>
 % The text of the block, set at full width in a box that is thrown away.
 % Counters are put back; labels, footnotes and index entries vanish with
 % the box. A block that opens an \item sets its label in the box too: the
@@ -833,7 +886,9 @@
     \tl_use:N \g__wrapblock_counters_tl
     \hbox_gset:Nn \@labels { \box_use:N \l__wrapblock_labels_box }
   }
+% </measure>
 
+% <placeholder>
 % An empty structure element where the block starts: a deferred image is
 % put in it when its page is shipped.
 \cs_new_protected:Npn \__wrapblock_placeholder:
@@ -849,6 +904,8 @@
           }
       }
   }
+% </placeholder>
+% <msgs>
 \msg_new:nnn { wrapblock } { early }
   { The~page~broke~too~early~in~the~text~of~the~block~on~input~line~
     \msg_line_number:,~before~its~image~was~set:~a~footnote~in~the~
@@ -857,7 +914,9 @@
 \msg_new:nnn { wrapblock } { alone }
   { The~text~of~the~block~on~input~line~\msg_line_number:\ ended~before~
     the~bottom~of~the~page:~its~image~is~set~after~it. }
+% </msgs>
 
+% <env>
 % ---------------------------------------------------------------- user
 \NewDocumentEnvironment { wrapblock } { O{} +m +b }
   {
@@ -889,7 +948,9 @@
       { \__wrapblock_inbox_end: }
       { \__wrapblock_end: }
   }
+% </env>
 
+% <begin>
 \cs_new_protected:Npn \__wrapblock_begin:n #1
   {
     \bool_if:NT \g__wrapblock_active_bool { \msg_error:nn { wrapblock } { nested } }
@@ -931,7 +992,9 @@
       }
     \bool_gset_true:N \g__wrapblock_active_bool
   }
+% </begin>
 
+% <end>
 \cs_new_protected:Npn \__wrapblock_end:
   {
     \par
@@ -957,3 +1020,4 @@
         \__wrapblock_stop:
       }
   }
+% </end>

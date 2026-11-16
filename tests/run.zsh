@@ -2,6 +2,7 @@
 # Runs every test with pdfLaTeX and LuaLaTeX, plain and tagged:
 # limits.tex (article and book), extra.tex, contexts.tex (and twocolumn).
 # Prints errors, `moved` warnings, overlaps and tagpdf structure warnings.
+# First checks that the documentation prints the whole package (chunks.py).
 # Needs pdflatex, lualatex, python3 and pdftotext (poppler) in the PATH.
 # With veraPDF in the PATH, each tagged build is also checked against PDF/UA-2,
 # and the failed clauses are printed (8.2.2 on pages with footnotes under
@@ -9,6 +10,8 @@
 # Usage: zsh tests/run.zsh
 cd "$(dirname "$0")"
 export TEXINPUTS="$(cd .. && pwd):"
+# the documentation prints every line of the package, chunk by chunk
+python3 chunks.py
 
 compile() {  # job, preamble definitions, file, runs
   local i
