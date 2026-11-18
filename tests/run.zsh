@@ -43,6 +43,8 @@ for engine in pdflatex lualatex; do
   compile contexts-$engine-twocol '\def\TWOCOL{}' contexts 2
   # floats, marginal notes and centred text in a block
   compile floats-$engine "" floats 2
+  # unusual images: a tcolorbox, text, nothing, too wide, too tall
+  compile images-$engine "" images 2
   # images near the bottom of a page: a heading never left alone
   for mode in plain tag; do
     tag=""; [[ $mode == tag ]] && tag='\def\TAGGING{}'

@@ -55,9 +55,11 @@
 \begin{abstract}
 The \pkg{wrapblock} package provides one environment, which sets an image beside a block of text. The text is narrowed along the image, then takes the full width again below it. The block is closed: the text that follows the environment never runs beside the image.
 
+The package gives the image no size of its own. The room it takes from the text is the width and the height of the image as it is given; only the width can be forced, with a key.
+
 Four properties set it apart from the other wrapping packages:
 \begin{enumerate}
-\item the text beside the image may hold lists, nested to any depth, and the block may itself open a list item;
+\item the text beside the image may hold lists, nested to any depth, and a whole block may be the first thing in a list item, right after \cs{item};
 \item the image and the lines beside it stay on the same page;
 \item it works with pdf\LaTeX{} and with Lua\LaTeX;
 \item in a tagged PDF, the structure is what it would be without the package.
@@ -71,13 +73,13 @@ Four properties set it apart from the other wrapping packages:
 
 \subsection{An example}
 
-\begin{wrapblock}{\sample}
-This paragraph is typeset by \pkg{wrapblock}. The text runs along the image, on its left, then takes the full width again once it is past it. \sampletext\sampletext
+\begin{wrapblock}{\includegraphics[width=0.24\linewidth, alt={Sample image}]{example-image-9x16}}
+This paragraph is typeset by \pkg{wrapblock}. The text runs along the image, on its left, then takes the full width again once it is past it.
 \begin{itemize}
-\item a list beside the image is narrowed too,
-\item with its labels in their place;
+\item A list beside the image is narrowed too: each of its lines stops where the room of the image starts, like the lines of a paragraph.
+\item Its labels stay in their place, and a long item such as this one is broken at the same limit as the text around it.
 \end{itemize}
-and the text after the list goes on wrapping, down to the bottom of the image and beyond. \sampletext
+The text after the list goes on wrapping, down to the bottom of the image and beyond. \sampletext\sampletext\sampletext
 \end{wrapblock}
 
 This paragraph comes after the environment. It is full width, however long the block is: when the text of the block is shorter than the image, vertical space is added down to the bottom of the image (section~\ref{sec:know}).
@@ -126,7 +128,7 @@ This first pass leaves almost no trace:
 
 When the text holds such a command, there are two ways out. The key \key{defer=false} turns the first pass off: a block whose image does not fit then always moves to the next page (case 3), and its text is typeset once. Or the command can be moved out of the block: the first use of an acronym, for instance.
 
-The image, for its part, is typeset twice at every block, wherever it is on the page: once to measure it, once for good. An image that steps a counter steps it twice.
+The image, for its part, is typeset twice at every block, wherever it is on the page: once to measure it, once for good. The \LaTeX{} counters it steps (a numbered equation, a caption) are put back after the first time; anything else it does globally is done twice.
 
 \subsection{No verbatim in the block}
 
@@ -161,7 +163,7 @@ The text of the block is read as an argument before it is typeset, so that it ca
 \subsection{The environment}
 
 \begin{docEnvironment}{wrapblock}{\oarg{keys}\marg{image}}
-  Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The environment starts a new paragraph, and so does the text after it.
+  Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The package does not scale it: the image has the size it is given, with the \key{width} or \key{height} of \cs{includegraphics} for instance, and the text is narrowed by that width, over that height. The \key{width} key below can only reserve a wider room, in which the image is centred. The environment starts a new paragraph, and so does the text after it.
 
   The contents are read as an argument, before they are typeset: they cannot hold verbatim material (\cs{verb}, \env{verbatim}); see section~\ref{sec:know}.
 \end{docEnvironment}
@@ -178,7 +180,7 @@ The text of the block is read as an argument before it is typeset, so that it ca
 Key & Default & Meaning \\
 \midrule
 \key{side} & \texttt{r} & side of the image: \texttt{r} (right) or \texttt{l} (left); \key{l} and \key{r} alone are short forms \\
-\key{width} & \texttt{0pt} & width reserved for the image; \texttt{0pt} means its natural width \\
+\key{width} & \texttt{natural} & width reserved for the image: \texttt{natural}, the width of the image itself, or a length \\
 \key{hsep} & \texttt{1em} & horizontal space between the image and the text \\
 \key{vsep} & \texttt{0.5\textbackslash baselineskip} & vertical space below the image \\
 \key{defer} & \texttt{true} & whether the image may go to the top of the next page \\
@@ -194,8 +196,8 @@ Key & Default & Meaning \\
   Short for \key{side=l}. Likewise \key{r} for \key{side=r}.
 \end{docKey}
 
-\begin{docKey}[wrapblock]{width}{=\meta{length}}{default \texttt{0pt}}
-  The width reserved for the image, which is centred in it. With \texttt{0pt}, the natural width of the image. Useful to align several blocks whose images differ in width.
+\begin{docKey}[wrapblock]{width}{=\texttt{natural}\textbar\meta{length}}{default \texttt{natural}}
+  The width reserved for the image. With \texttt{natural}, it is the width of the image itself. With a \meta{length}, the image is centred in a room of that width: this aligns several blocks whose images differ in width.
 \end{docKey}
 
 \begin{docKey}[wrapblock]{hsep}{=\meta{length}}{default \texttt{1em}}
@@ -212,6 +214,36 @@ Key & Default & Meaning \\
 
 The defaults of \key{hsep} and \key{vsep} are computed once, when the package is loaded, with the font and the \cs{baselineskip} of that moment: those of the normal size of the document. A length given in the document is computed where it is given.
 
+\subsection{What the image may be}\label{sec:image}
+
+The image is typeset the way \cs{mbox} typesets its contents: on one line, without line breaks. Anything that can go in an \cs{mbox} can be an image. These were tried, with both engines:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Given as the image & What happens \\
+\midrule
+\cs{includegraphics}, \env{tikzpicture}, \env{tabular} & as expected \\
+\env{minipage}, \cs{parbox} & as expected; this is the way to give paragraphs, a list, a displayed equation or a caption (\cs{captionof}) as the image \\
+\env{tcolorbox} & as expected; a \texttt{breakable} one does not break beside the text \\
+a few words & set on one line beside the text \\
+nothing & the text is narrowed by \key{hsep} on its first line only \\
+a long text, without \cs{parbox} & one very long line: see ``too wide'' below \\
+a list or a displayed equation, without \env{minipage} & errors of \LaTeX{} (``Not allowed in LR mode'', ``Bad math environment delimiter''): they need a \env{minipage} \\
+\cs{verb}, \env{verbatim} & errors: the image is read as an argument. Typeset the verbatim material beforehand in a box, and give \cs{usebox} as the image (section~\ref{sec:know}) \\
+a \env{figure}, a \cs{marginpar} & the error ``Not in outer par mode'': a float cannot be the image; for a caption, use \cs{captionof} in a \env{minipage} \\
+a footnote in a box (\cs{fbox}, \env{tabular}) & its text is lost, as in any box: use \cs{footnotemark} in the image and \cs{footnotetext} in the text. In a \env{minipage}, the footnote is set at the foot of the \env{minipage} \\
+another \env{wrapblock} & the error ``blocks cannot be nested'' \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Two sizes are special:
+\begin{itemize}
+\item \emph{An image too wide.} When less than 3\,em would be left for the text beside the image, the text is not wrapped: the image is set on a line of its own, above the text, and a warning says so.
+\item \emph{An image taller than the page.} It fits nowhere: the block starts a new page, the image runs out of the page at the bottom, and a warning says so.
+\end{itemize}
+
 \subsection{Image on the left}
 
 \begin{verbatim}
@@ -227,7 +259,19 @@ The defaults of \key{hsep} and \key{vsep} are computed once, when the package is
 
 \subsection{Lists}
 
-A list in the block is narrowed along the image, labels included, at any depth; it gets its normal width back below the image. The block may also open an \cs{item}: the image is then aligned with the margin of the item and, on the left, the labels stay in the margin, before the image.
+A list in the block is narrowed along the image, labels included, at any depth; it gets its normal width back below the image.
+
+A block may also be the first thing in an item of a list, right after \cs{item}, as the second question below: the image is then aligned with the margin of the item and, on the left, the label stays in the margin, before the image.
+\begin{verbatim}
+\begin{enumerate}
+\item A question without an image.
+\item \begin{wrapblock}[l]{\includegraphics[width=3cm]{diagram}}
+  A question with its diagram, on the left: ...
+\end{wrapblock}
+\item The next question, after the block.
+\end{enumerate}
+\end{verbatim}
+The block is a whole: it starts and ends inside the same item. A list opened in the block must be closed in the block, and an \cs{item} of the outer list cannot come in the middle of it.
 
 \begin{enumerate}
 \item A question without an image. \sampletext
@@ -303,10 +347,16 @@ The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard
 Each message names the input line where the block \emph{ends}, the line of its \verb|\end{wrapblock}|: the text of the block is read as a whole before anything is typeset, and \TeX{} is on that line by then. Here is what each message means, and what to do about it.
 
 \msgitem{wrapblock blocks cannot be nested.}
-\emph{Error.} A block was opened in the text of another one. Close the first block before opening the second.
+\emph{Error.} A block was opened in the text of another one, or in its image. Close the first block before opening the second.
 
 \msgitem{The image of the block that ends on input line \dots{} does not fit at the bottom of the page, and its text is too short \dots}
 \emph{Warning.} This is case 3 of section~\ref{sec:bottom}: the whole block moved to the next page, and the bottom of this page is empty. Shorten the image, lengthen the text, or move the block in the source.
+
+\msgitem{The image of the block that ends on input line \dots{} leaves only \dots{} for the text beside it: it is set above the text, which is not wrapped.}
+\emph{Warning.} Less than 3\,em would be left for the text beside the image (section~\ref{sec:image}). Make the image narrower; a long text given as the image needs a \cs{parbox}.
+
+\msgitem{The image of the block that ends on input line \dots{} is taller than the page.}
+\emph{Warning.} The image runs out of the page at the bottom. Make it smaller.
 
 \msgitem{A box of width \dots, in the block that ends on input line \dots, sits beside the image, where only \dots{} is left.}
 \emph{Warning.} A \cs{parbox}, a \env{minipage} or a \texttt{p} cell beside the image is wider than the room left there, and overlaps the image. The warning is given once per block, for the first such box. Make the box narrower, or put it below the image.
@@ -371,6 +421,7 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   \item a float in a block gave the warning about a box that is too wide;
   \item the messages now say that the line they give is that of the end of the block.
   \end{itemize}
+  New: an image too wide for any text beside it is set above the text; an image taller than the page no longer leaves an empty page; the counters stepped by the image (equation, caption) are no longer stepped twice; a block given as the image of another is an error. The default of the \key{width} key is now written \texttt{natural}; \texttt{0pt}, its former spelling, still means the same.
   The documentation was rewritten, and now ends with the whole code, explained.
 \end{description}
 
@@ -482,6 +533,7 @@ Three local switches say where the code stands:
 \item \lv{outer_bool} is true in the text of the block itself. It is false in a box inside the block (a \cs{parbox}, a footnote, a float) and in the box where the text is measured: the hooks then leave the paragraphs alone.
 \item \lv{inside_bool} is true within the environment.
 \item \lv{inbox_bool} is true when the block itself sits in a box.
+\item \lv{inimage_bool} is true while the image is typeset, to catch a block given as the image of another; \lv{alone_bool} is true when the image is too wide to have text beside it.
 \end{itemize}
 The remaining local variables are scratch space for the computations.
 
@@ -503,7 +555,7 @@ These variables serve the deferred image and the measure of the text:
 
 \code{keys}
 
-The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for one block. The initial values of \key{hsep} and \key{vsep} are computed when the package is loaded, with the font and the \cs{baselineskip} of that moment.
+The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for one block. \key{width=natural} is kept as a width of 0\,pt, which the code reads as ``the width of the image''. The initial values of \key{hsep} and \key{vsep} are computed when the package is loaded, with the font and the \cs{baselineskip} of that moment.
 
 \subsection{The environment}
 
@@ -514,7 +566,8 @@ The environment takes its text as an argument (\texttt{+b}), because the text ma
 In order, the environment:
 \begin{enumerate}
 \item ends the current paragraph, numbers the block and sets its keys;
-\item builds the image once, with tagging suspended, only to measure it: \gv{height_dim} is its height and depth plus \key{vsep}, \gv{shift_dim} its width plus \key{hsep}. The image is built for good later, inside the first paragraph;
+\item builds the image once, with tagging suspended, only to measure it: \gv{height_dim} is its height and depth plus \key{vsep}, \gv{shift_dim} its width plus \key{hsep}. The \LaTeX{} counters are kept before and put back after (\fn{counters_save:}), so that a numbered equation or a caption in the image is not counted twice. The image is built for good later, inside the first paragraph;
+\item warns about an image taller than the page. An image that leaves less than 3\,em beside it is not wrapped at all: it is typeset on a line of its own, the text follows at full width, and nothing of the rest of the package is used (\lv{alone_bool});
 \item tells a block in a box from a block on the page. After \cs{par}, \TeX{} is in internal vertical mode in a \env{minipage} or a \cs{parbox}, and in outer vertical mode on the page: \ecs{mode_if_inner:TF} tests it. On the page, \fn{begin:n} prepares the zone;
 \item typesets the text, as it is.
 \end{enumerate}
@@ -560,7 +613,7 @@ When the block does not follow a heading and the page ends with some other glue,
 
 \code{needspace}
 
-To move the block to the next page, \cs{newpage} would not do: a block that follows a heading must take the heading with it. The package lets the page builder of \TeX{} choose the break, since it knows the best breakpoint before this point. In order:
+\fn{need_space:} moves the block to the next page. An image taller than the page is a case apart: the block gets a plain \cs{newpage}, since the rule described below would itself not fit on the next page, and would leave it empty. In every other case, \fn{need_space_aux:} does the work, and \cs{newpage} would not do: a block that follows a heading must take the heading with it. The package lets the page builder of \TeX{} choose the break, since it knows the best breakpoint before this point. In order:
 \begin{enumerate}
 \item \cs{prevdepth} is kept, to be put back at the end.
 \item A \cs{penalty}~0 offers a breakpoint just before the block; not after a heading (\texttt{@nobreak} is then true), which must stay with the block.
@@ -574,8 +627,8 @@ The rule must be taller than the room by the shrink of the page. Otherwise, when
 
 The measure typesets the text at full width in a \cs{vbox} that is thrown away, and keeps its height and depth in \gv{text_dim}. Whatever the text writes to a file without \cs{immediate} (labels, table of contents, index) and its footnotes vanish with the box. Its other global effects are undone by hand:
 \begin{itemize}
-\item \emph{The \LaTeX{} counters.} \cs{cl@@ckpt} lists them all, as \cs{@elt}\marg{name}. \cs{@elt} is redefined so that running the list appends to \gv{counters_tl} one command per counter, which sets it back to its present value.
-\item \emph{The label of an item.} \cs{@labels} is the box where \cs{item} leaves its label for the next paragraph. A block that opens an item would use the label in the measure, and leave none for the text. The box is copied, and set again from the copy after the measure.
+\item \emph{The \LaTeX{} counters}, by \fn{counters_save:}. \cs{cl@@ckpt} lists them all, as \cs{@elt}\marg{name}. \cs{@elt} is redefined so that running the list appends to \gv{counters_tl} one command per counter, which sets it back to its present value.
+\item \emph{The label of an item.} \cs{@labels} is the box where \cs{item} leaves its label for the next paragraph. A block that comes first in an item would use the label in the measure, and leave none for the text. The box is copied, and set again from the copy after the measure.
 \item \emph{The switches of lists and headings} (\texttt{@inlabel}, \texttt{@newlist}, \texttt{@noparitem}, \texttt{@minipage}, \texttt{@nobreak}), which the first paragraph of the text turns off. They are appended to \gv{counters_tl} as well. Without this, \texttt{@nobreak} would be left false after a heading, and the page could break between the heading and the block.
 \item \emph{Floats and \cs{marginpar}.} They cannot leave a box. Between two paragraphs, \LaTeX{} notices the box and gives the error ``Not in outer par mode'': the error is turned off, and the float is set in a box of the package. Inside a paragraph, \LaTeX{} does not notice it and takes one of its float boxes, which would end as ``Float(s) lost'': its two lists of float boxes, \cs{@freelist} and \cs{@currlist}, are put back after the measure.
 \end{itemize}
@@ -648,7 +701,7 @@ For instance, in the usual case (\texttt{\#2} and \texttt{\#3} are 0), a paragra
 
 \code{build}
 
-\fn{build:} typesets the image in \gv{img_box}, centred in the width of the \key{width} key when one is given. It is called twice: by the environment, to measure the image, and by \fn{place_image:}, inside the first paragraph. The second call is not a waste: in a tagged PDF, an \cs{fbox}, a \env{tabular} or a \cs{parbox} built outside a paragraph would open its structure elements at the wrong place.
+\fn{build:} typesets the image in \gv{img_box}, centred in the width of the \key{width} key when one is given. It is called twice: by the environment, to measure the image, and by \fn{place_image:}, inside the first paragraph. \lv{inimage_bool} is set inside the box: a \env{wrapblock} met there is an error. The second call is not a waste: in a tagged PDF, an \cs{fbox}, a \env{tabular} or a \cs{parbox} built outside a paragraph would open its structure elements at the wrong place.
 
 \fn{place_image:} puts the image at the start of the first line of the block:
 \begin{itemize}
@@ -660,7 +713,7 @@ For instance, in the usual case (\texttt{\#2} and \texttt{\#3} are 0), a paragra
 
 \code{labels}
 
-When the block opens an \cs{item}, \LaTeX{} typesets the label at the start of the first line, from the box \cs{@labels}; the label reaches into the margin by a negative kern. With the image on the left, the first line starts after the image, and the label would land on the image. The label box is wrapped in two kerns: the first moves the label back by \gv{shift_dim}, the second gives the width back.
+When the block comes first in an \cs{item}, \LaTeX{} typesets the label at the start of the first line, from the box \cs{@labels}; the label reaches into the margin by a negative kern. With the image on the left, the first line starts after the image, and the label would land on the image. The label box is wrapped in two kerns: the first moves the label back by \gv{shift_dim}, the second gives the width back.
 
 \subsection{Keeping the zone on one page}
 

@@ -5,7 +5,7 @@
 % bottom of the page. The same page is repeated with image heights around
 % the limit; run.zsh checks that no page ends with a heading, and that no
 % word overlaps an image (collisions.py). The last two sweeps put a list
-% right after the page break, the last one in a block that opens an item.
+% right after the page break, the last one in a block that comes first in an item.
 % Tagged: \def\TAGGING{}.
 \ifdefined\TAGGING
   \DocumentMetadata{lang=en, pdfversion=2.0, pdfstandard=ua-2, tagging=on}
@@ -22,7 +22,7 @@
   \begin{wrapblock}{\fbox{\parbox[t][#1][s]{4cm}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
   #2
   \end{wrapblock}}
-\newcommand\icase[2]{% the same, in a block that opens an \item
+\newcommand\icase[2]{% the same, in a block that comes first in an \item
   \clearpage
   \kant[1-2]
   \section{Image #1 high}
@@ -43,7 +43,7 @@
 % in: the page breaks early on the first run, and right on the next ones
 % (the room is kept in the .aux)
 \sweep{A text with a footnote\footnote{\kant[1][1-3]} in its first lines. \kant*[4]\kant*[5]}
-% a list right after the page break, and a block that opens an \item
+% a list right after the page break, and a block that comes first in an \item
 \sweep{\kant[4]\begin{itemize}\item one,\item two;\end{itemize}and after. \kant[5]}
 \let\case\icase
 \sweep{\kant[4]\begin{itemize}\item one,\item two;\end{itemize}and after. \kant[5]}

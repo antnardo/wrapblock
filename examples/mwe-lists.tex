@@ -1,5 +1,5 @@
 % Minimal example: lists beside the image, at any depth,
-% and a block that opens an \item.
+% and a block that comes first in an \item.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{wrapblock}
@@ -21,12 +21,12 @@ A short introduction to the list.
 \end{itemize}
 \end{wrapblock}
 
-\section{A block that opens an item}
+\section{A block at the start of an item}
 
 \begin{enumerate}
   \item An ordinary item. \filler
   \item \begin{wrapblock}[side=l]{\includegraphics[width=3cm]{example-image-b}}
-    The block opens this item: the label stays in the margin, beside the image. \filler\filler\filler\filler
+    The block comes first in this item: the label stays in the margin, beside the image. \filler\filler\filler\filler
   \end{wrapblock}
   \item The next item is full width again. \filler
 \end{enumerate}

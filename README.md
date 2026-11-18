@@ -14,10 +14,14 @@ The text of the block runs along the image, then takes the full width again
 below it; the text after the environment is full width. The block is closed:
 the image never spills over what follows.
 
+The package gives the image no size of its own: the room taken from the text
+is the width and the height of the image as it is given. Only the width can
+be forced, with the `width` key.
+
 Four properties that no existing wrapping package combines:
 
-- **lists**: a list beside the image is narrowed, at any depth, and the block
-  may itself open an `\item`;
+- **lists**: a list beside the image is narrowed, at any depth, and a block
+  may be the first thing in an `\item` (`\item \begin{wrapblock}…`);
 - **page breaks**: the image and the lines beside it stay on the same page;
   when the image does not fit at the bottom of a page, the text fills that
   bottom at full width and the image goes to the top of the next page; a

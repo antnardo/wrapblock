@@ -24,7 +24,8 @@
 % at that point, from the top of the text area.
 \box_new:N  \g__wrapblock_img_box
 \tl_new:N   \g__wrapblock_img_tl        % the image, as given
-\dim_new:N  \g__wrapblock_img_width_dim % its width key
+\dim_new:N  \g__wrapblock_img_width_dim % its width key (0pt: natural)
+\dim_new:N  \l__wrapblock_width_dim
 \bool_new:N \g__wrapblock_active_bool   % a region is running
 \bool_new:N \g__wrapblock_pending_bool  % the image is not placed yet
 \dim_new:N  \g__wrapblock_bottom_dim    % bottom of the reserved area
@@ -58,6 +59,8 @@
 \int_new:N  \g__wrapblock_narrowed_int  % lines narrowed in the paragraph
 \bool_new:N \l__wrapblock_inside_bool   % inside a wrapblock environment
 \bool_new:N \l__wrapblock_inbox_bool    % this block sits in a box
+\bool_new:N \l__wrapblock_inimage_bool  % inside the image of a block
+\bool_new:N \l__wrapblock_alone_bool    % the image is too wide: no wrapping
 \tl_new:N   \l__wrapblock_shape_tl
 \tl_new:N   \l__wrapblock_pen_tl
 % </state>
@@ -234,8 +237,15 @@
     side  .initial:n  = r ,
     l     .meta:n     = { side = l } ,
     r     .meta:n     = { side = r } ,
-    width .dim_set:N  = \l__wrapblock_width_dim ,
-    width .initial:n  = 0pt ,
+    % natural: the width of the image itself, kept as 0pt
+    width .code:n     =
+      {
+        \str_if_eq:nnTF {#1} { natural }
+          { \dim_zero:N \l__wrapblock_width_dim }
+          { \dim_set:Nn \l__wrapblock_width_dim {#1} }
+      } ,
+    width .initial:n  = natural ,
+    width .value_required:n = true ,
     hsep  .dim_set:N  = \l__wrapblock_hsep_dim ,
     hsep  .initial:n  = 1em ,
     vsep  .dim_set:N  = \l__wrapblock_vsep_dim ,
@@ -416,6 +426,7 @@
   {
     \hbox_gset:Nn \g__wrapblock_img_box
       {
+        \bool_set_true:N \l__wrapblock_inimage_bool
         \dim_compare:nNnTF { \g__wrapblock_img_width_dim } > { 0pt }
           {
             \hbox_to_wd:nn { \g__wrapblock_img_width_dim }
@@ -462,7 +473,7 @@
 % </build>
 
 % <labels>
-% A block that opens an \item: the labels, which LaTeX sets at the start
+% A block that comes first in an \item: the labels, which LaTeX sets at the start
 % of the first line, would follow the text past a left image and land on
 % it. Move them back to their place in the margin.
 \cs_new_protected:Npn \__wrapblock_labels_back:
@@ -831,6 +842,15 @@
 % page the block starts on.
 \cs_new_protected:Npn \__wrapblock_need_space:
   {
+    % An image taller than the page fits nowhere: the rule below would
+    % leave an empty page. A plain page break, and the image overflows.
+    \dim_compare:nNnTF
+      { \g__wrapblock_height_dim + \baselineskip } > { \tex_vsize:D }
+      { \newpage }
+      { \__wrapblock_need_space_aux: }
+  }
+\cs_new_protected:Npn \__wrapblock_need_space_aux:
+  {
     \dim_set_eq:NN \l__wrapblock_base_dim \prevdepth
     \legacy_if:nF { @nobreak } { \tex_penalty:D 0 ~ }
     \dim_set:Nn \l__wrapblock_rule_dim
@@ -889,9 +909,9 @@
 % <measure>
 % The text of the block, set at full width in a box that is thrown away.
 % Counters are put back; labels, footnotes and index entries vanish with
-% the box. A block that opens an \item sets its label in the box too: the
+% the box. A block that comes first in an \item sets its label in the box too: the
 % label and the state of the list are put back as well.
-\cs_new_protected:Npn \__wrapblock_measure:n #1
+\cs_new_protected:Npn \__wrapblock_counters_save:
   {
     \tl_gclear:N \g__wrapblock_counters_tl
     \group_begin:
@@ -902,6 +922,10 @@
         }
       \cl@@ckpt
     \group_end:
+  }
+\cs_new_protected:Npn \__wrapblock_measure:n #1
+  {
+    \__wrapblock_counters_save:
     \hbox_set:Nn \l__wrapblock_labels_box { \box_use:N \@labels }
     \hbox_gset:Nn \@labels { \box_use:N \l__wrapblock_labels_box }
     \clist_map_inline:nn { @inlabel , @newlist , @noparitem , @minipage , @nobreak }
@@ -977,33 +1001,62 @@
 \NewDocumentEnvironment { wrapblock } { O{} +m +b }
   {
     \par
+    \bool_if:NT \l__wrapblock_inimage_bool { \msg_error:nn { wrapblock } { nested } }
     \int_gincr:N \g__wrapblock_block_int
     \keys_set:nn { wrapblock } {#1}
     \tl_gset:Nn \g__wrapblock_img_tl {#2}
     \dim_gset_eq:NN \g__wrapblock_img_width_dim \l__wrapblock_width_dim
     % measured here, with tagging suspended; built for good where it is
     % placed, inside the first paragraph (see \__wrapblock_build:)
+    % the counters it steps (an equation, a caption) are put back
     \cs_if_exist_use:NT \tag_suspend:n { { wrapblock } }
+    \__wrapblock_counters_save:
     \__wrapblock_build:
+    \tl_use:N \g__wrapblock_counters_tl
     \cs_if_exist_use:NT \tag_resume:n { { wrapblock } }
     \dim_gset:Nn \g__wrapblock_height_dim
       { \box_ht:N \g__wrapblock_img_box + \box_dp:N \g__wrapblock_img_box
         + \l__wrapblock_vsep_dim }
     \dim_gset:Nn \g__wrapblock_shift_dim
       { \box_wd:N \g__wrapblock_img_box + \l__wrapblock_hsep_dim }
-    \mode_if_inner:TF
+    \dim_compare:nNnT { \g__wrapblock_height_dim } > { \textheight }
+      { \msg_warning:nn { wrapblock } { tall } }
+    % less than 3em left beside the image: no wrapping, the image is set
+    % on a line of its own, above the text
+    \dim_compare:nNnTF { \linewidth - \g__wrapblock_shift_dim } < { 3em }
       {
-        \bool_set_true:N \l__wrapblock_inbox_bool
-        \__wrapblock_inbox_begin:
+        \msg_warning:nne { wrapblock } { wide }
+          { \dim_eval:n { \linewidth - \g__wrapblock_shift_dim } }
+        \bool_set_true:N \l__wrapblock_alone_bool
+        \noindent \__wrapblock_build: \box_use:N \g__wrapblock_img_box
+        \par \nobreak
       }
-      { \__wrapblock_begin:n {#3} }
+      {
+        \mode_if_inner:TF
+          {
+            \bool_set_true:N \l__wrapblock_inbox_bool
+            \__wrapblock_inbox_begin:
+          }
+          { \__wrapblock_begin:n {#3} }
+      }
     #3
   }
   {
-    \bool_if:NTF \l__wrapblock_inbox_bool
-      { \__wrapblock_inbox_end: }
-      { \__wrapblock_end: }
+    \bool_if:NTF \l__wrapblock_alone_bool
+      { \par }
+      {
+        \bool_if:NTF \l__wrapblock_inbox_bool
+          { \__wrapblock_inbox_end: }
+          { \__wrapblock_end: }
+      }
   }
+\msg_new:nnn { wrapblock } { wide }
+  { The~image~of~the~block~that~ends~on~input~line~\msg_line_number:\
+    leaves~only~#1~for~the~text~beside~it:~it~is~set~above~the~text,~
+    which~is~not~wrapped. }
+\msg_new:nnn { wrapblock } { tall }
+  { The~image~of~the~block~that~ends~on~input~line~\msg_line_number:\
+    is~taller~than~the~page. }
 % </env>
 
 % <begin>
