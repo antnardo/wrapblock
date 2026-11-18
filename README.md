@@ -48,11 +48,15 @@ The package is written in expl3.
 
 ## Contents
 
+In the repository; the CTAN archive holds the package, the documentation and
+the examples in one folder, without the tests.
+
 | File | Role |
 | --- | --- |
 | `wrapblock.sty` | the package |
-| `doc/wrapblock-doc.tex`, `doc/wrapblock-doc.pdf` | the documentation, which ends with the whole code, commented; it compiles with both engines, from `doc/`, with `wrapblock.sty` one level up |
+| `doc/wrapblock-doc.tex`, `doc/wrapblock-doc.pdf` | the documentation, which ends with the whole code, commented; it compiles with both engines, and reads `wrapblock.sty` wherever TeX finds it (`TEXINPUTS=..:` from `doc/`) |
 | `examples/` | minimal examples, one per property: `mwe-basic`, `mwe-lists`, `mwe-pagebreak`, `mwe-tagged`; `zsh examples/build.zsh` compiles them with both engines |
+| `ctan.zsh` | builds the archive for CTAN, in `../wrapblock-construction/ctan/` |
 | `tests/` | the tests: `zsh tests/run.zsh` compiles each one with both engines, plain and tagged, and reports errors, tagging warnings and text overlapping an image; it needs `python3` and `pdftotext` (poppler), and checks the tagged builds against PDF/UA-2 when `verapdf` is in the PATH |
 
 ## Installation
@@ -69,3 +73,8 @@ This work may be distributed and/or modified under the conditions of the LaTeX
 Project Public License, version 1.3c or any later version.
 
 Author and maintainer: Antonin Marchand.
+
+## Bugs
+
+Report a bug, with a minimal example, at
+<https://github.com/antnardo/wrapblock/issues>.

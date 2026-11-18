@@ -23,14 +23,15 @@
 \newcommand\key[1]{\texttt{#1}}
 \providecommand\env[1]{\texttt{#1}}
 % The implementation: the code is read from wrapblock.sty itself, chunk by
-% chunk, between the lines "% <name>" and "% </name>" of the file.
+% chunk, between the lines "% <name>" and "% </name>" of the file. The
+% file is the one TeX finds: beside this one, or through TEXINPUTS.
 \usepackage{listings,url}
 \lstset{basicstyle=\ttfamily\footnotesize, columns=fixed, basewidth=0.52em, keepspaces=true, upquote=true, numbers=left, numberstyle=\tiny\color{black!50}, numbersep=6pt, breaklines=true, morecomment=[l]{\%}, commentstyle=\color{black!60}, aboveskip=0.6\baselineskip, belowskip=0.6\baselineskip, rangebeginprefix=\%\ <, rangebeginsuffix=>, rangeendprefix=\%\ </, rangeendsuffix=>, includerangemarker=false}
 % listings takes over the \everypar that \@afterheading uses to clear
 % @nobreak: a heading followed by code would leave it set, and the next
 % heading would get no space above it.
 \makeatletter
-\newcommand\code[1]{\lstinputlisting[linerange=#1-#1]{../wrapblock.sty}\par\global\@nobreakfalse}
+\newcommand\code[1]{\lstinputlisting[linerange=#1-#1]{wrapblock.sty}\par\global\@nobreakfalse}
 \makeatother
 % Names of the package: \fn{shape:Nnnn}, \gv{ship_int}, \lv{base_dim}.
 \DeclareUrlCommand\csurl{\urlstyle{tt}\def\UrlBreaks{\do\_}\def\UrlBigBreaks{\do\:}}
@@ -47,7 +48,7 @@
 \title{\pkg{wrapblock}\\[0.4em]
   \large An image beside its own text, which wraps around it and runs below}
 \author{Antonin Marchand}
-\date{Version 0.1.2 --- 18 November 2026}
+\date{Version 0.1.3 --- 18 November 2026}
 
 \begin{document}
 \maketitle
@@ -94,7 +95,7 @@ The image and the lines beside it are never split by a page break. When a block 
 \item \emph{The image does not fit, and the text is long.} The text runs at full width to the bottom of the page. The image is deferred: it goes to the top of the next page, where the text wraps around it.
 \item \emph{The image does not fit, and the text is short.} At full width, the text would end on this page and leave the image alone on the next one. The whole block moves to the next page instead, together with the heading that precedes it, if any. The bottom of the page is left empty, and a warning in the \texttt{.log} says so: the author may want to change something.
 \end{enumerate}
-Below the image, the text of the block breaks like any other text. The file \texttt{mwe-pagebreak.tex}, in the \texttt{examples} folder, shows the three cases with long, medium and short texts.
+Below the image, the text of the block breaks like any other text. The file \texttt{mwe-pagebreak.tex}, one of the examples that come with the package, shows the three cases with long, medium and short texts.
 
 \subsection{What it does not do}
 
@@ -352,7 +353,7 @@ A deferred image, set at the top of the next page, keeps its place in the readin
 
 An image of another kind --- \env{tikzpicture}, \env{tabular}, \cs{fbox} --- is tagged exactly as it would be at the start of a paragraph without the package; describing it is left to the author, as it is without the package.
 
-The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard=ua-2|, with an \cs{includegraphics}, a \env{tabular}, a \env{tikzpicture}, a \cs{parbox}, a \env{minipage} and an \cs{fbox} as image: tagpdf gives no more warnings than with the same image at the start of an ordinary paragraph, and the structure tree is the same with pdf\LaTeX{} and Lua\LaTeX. veraPDF~1.30 finds the tagged example \texttt{examples/mwe-tagged.tex} conformant to PDF/UA-2 with both engines, and finds nothing in the tests that the same document does not give without the package; with pdf\LaTeX, a footnote breaks clause~8.2.2, with or without the package. The PDF/UA conformance of a whole document does not depend on this package only.
+The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard=ua-2|, with an \cs{includegraphics}, a \env{tabular}, a \env{tikzpicture}, a \cs{parbox}, a \env{minipage} and an \cs{fbox} as image: tagpdf gives no more warnings than with the same image at the start of an ordinary paragraph, and the structure tree is the same with pdf\LaTeX{} and Lua\LaTeX. veraPDF~1.30 finds the tagged example \texttt{mwe-tagged.tex} conformant to PDF/UA-2 with both engines, and finds nothing in the tests that the same document does not give without the package; with pdf\LaTeX, a footnote breaks clause~8.2.2, with or without the package. The PDF/UA conformance of a whole document does not depend on this package only.
 
 % =========================================================================
 \section{Messages}\label{sec:messages}
@@ -446,6 +447,7 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   Lists: a block may hold items of a list opened before it and closed after it. A block moved to the next page no longer starts with a blank when its text starts with an \cs{item}, a list or a heading, and it keeps the indentation of the list around it.
 
   The documentation says what the image may be (section~\ref{sec:image}).
+\item[0.1.3 (18 November 2026)] No change in the code. The README says where to report a bug, and the documentation reads the code of the package wherever \TeX{} finds it, so that it compiles from one folder.
 \end{description}
 
 % =========================================================================
