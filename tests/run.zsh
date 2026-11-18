@@ -45,6 +45,9 @@ for engine in pdflatex lualatex; do
   compile floats-$engine "" floats 2
   # unusual images: a tcolorbox, text, nothing, too wide, too tall
   compile images-$engine "" images 2
+  # items in a block, the list opened before it and closed after it
+  compile items-$engine "" items 2
+  printf "%-26s " ""; python3 items.py items-$engine.pdf | head -1
   # images near the bottom of a page: a heading never left alone
   for mode in plain tag; do
     tag=""; [[ $mode == tag ]] && tag='\def\TAGGING{}'

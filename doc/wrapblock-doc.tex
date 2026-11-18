@@ -47,7 +47,7 @@
 \title{\pkg{wrapblock}\\[0.4em]
   \large An image beside its own text, which wraps around it and runs below}
 \author{Antonin Marchand}
-\date{Version 0.1.1 --- 18 November 2026}
+\date{Version 0.1.2 --- 18 November 2026}
 
 \begin{document}
 \maketitle
@@ -197,7 +197,7 @@ Key & Default & Meaning \\
 \end{docKey}
 
 \begin{docKey}[wrapblock]{width}{=\texttt{natural}\textbar\meta{length}}{default \texttt{natural}}
-  The width reserved for the image. With \texttt{natural}, it is the width of the image itself. With a \meta{length}, the image is centred in a room of that width: this aligns several blocks whose images differ in width.
+  The width reserved for the image. With \texttt{natural}, it is the width of the image itself. With a \meta{length}, the image is centred in a room of that width: this aligns several blocks whose images differ in width. The length is taken as it is: a room narrower than the image lets the image stick out on both sides, and \texttt{0pt} is a room of no width.
 \end{docKey}
 
 \begin{docKey}[wrapblock]{hsep}{=\meta{length}}{default \texttt{1em}}
@@ -225,7 +225,7 @@ Given as the image & What happens \\
 \midrule
 \cs{includegraphics}, \env{tikzpicture}, \env{tabular} & as expected \\
 \env{minipage}, \cs{parbox} & as expected; this is the way to give paragraphs, a list, a displayed equation or a caption (\cs{captionof}) as the image \\
-\env{tcolorbox} & as expected; a \texttt{breakable} one does not break beside the text \\
+\env{tcolorbox} & as expected; a \texttt{breakable} one does not break: near the bottom of a page it is deferred or moved as a whole, like any image \\
 a few words & set on one line beside the text \\
 nothing & the text is narrowed by \key{hsep} on its first line only \\
 a long text, without \cs{parbox} & one very long line: see ``too wide'' below \\
@@ -271,7 +271,20 @@ A block may also be the first thing in an item of a list, right after \cs{item},
 \item The next question, after the block.
 \end{enumerate}
 \end{verbatim}
-The block is a whole: it starts and ends inside the same item. A list opened in the block must be closed in the block, and an \cs{item} of the outer list cannot come in the middle of it.
+A block may also hold several items of a list that is opened before it and closed after it, with the image on the right:
+\begin{verbatim}
+\begin{enumerate}
+\item A question without an image.
+\begin{wrapblock}{\includegraphics[width=3cm]{diagram}}
+\item The first question beside the diagram.
+\item The second one.
+\end{wrapblock}
+\item The next question, after the block.
+\end{enumerate}
+\end{verbatim}
+With the image on the left, this does not work: only the label of the first item is kept out of the image, and the labels of the following items are set over it.
+
+What cannot be done is to open a list in the block and close it after the block, or the reverse: the block is an environment, and \LaTeX{} wants environments nested.
 
 \begin{enumerate}
 \item A question without an image. \sampletext
@@ -421,8 +434,18 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   \item a float in a block gave the warning about a box that is too wide;
   \item the messages now say that the line they give is that of the end of the block.
   \end{itemize}
-  New: an image too wide for any text beside it is set above the text; an image taller than the page no longer leaves an empty page; the counters stepped by the image (equation, caption) are no longer stepped twice; a block given as the image of another is an error. The default of the \key{width} key is now written \texttt{natural}; \texttt{0pt}, its former spelling, still means the same.
   The documentation was rewritten, and now ends with the whole code, explained.
+\item[0.1.2 (18 November 2026)] The image:
+  \begin{itemize}
+  \item the default of the \key{width} key is now \texttt{natural}, the width of the image itself, instead of \texttt{0pt}; a length, \texttt{0pt} included, is always taken as it is;
+  \item an image that leaves less than 3\,em beside it is set above the text, which is not wrapped;
+  \item an image taller than the page no longer leaves an empty page;
+  \item the counters stepped by the image (an equation, a caption) are no longer stepped twice;
+  \item a block given as the image of another is an error.
+  \end{itemize}
+  Lists: a block may hold items of a list opened before it and closed after it. A block moved to the next page no longer starts with a blank when its text starts with an \cs{item}, a list or a heading, and it keeps the indentation of the list around it.
+
+  The documentation says what the image may be (section~\ref{sec:image}).
 \end{description}
 
 % =========================================================================
@@ -555,7 +578,7 @@ These variables serve the deferred image and the measure of the text:
 
 \code{keys}
 
-The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for one block. \key{width=natural} is kept as a width of 0\,pt, which the code reads as ``the width of the image''. The initial values of \key{hsep} and \key{vsep} are computed when the package is loaded, with the font and the \cs{baselineskip} of that moment.
+The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for one block. \key{width=natural} is kept as a width of minus \cs{maxdimen}, which no length can be; the code reads it as ``the width of the image''. The initial values of \key{hsep} and \key{vsep} are computed when the package is loaded, with the font and the \cs{baselineskip} of that moment.
 
 \subsection{The environment}
 
@@ -618,8 +641,8 @@ When the block does not follow a heading and the page ends with some other glue,
 \item \cs{prevdepth} is kept, to be put back at the end.
 \item A \cs{penalty}~0 offers a breakpoint just before the block; not after a heading (\texttt{@nobreak} is then true), which must stay with the block.
 \item An invisible rule is added, too tall for the page: as tall as the image area plus a line, plus the shrink of the page (\cs{pageshrink}) and 1\,sp.
-\item A \cs{penalty}~9999 offers a breakpoint after the rule, and the primitive \cs{par}, in vertical mode, runs the page builder. The page cannot hold the rule, so \TeX{} breaks at the best breakpoint it has seen: before the block, or before the heading, since a heading forbids a break after itself. The rule goes to the next page.
-\item There, a negative skip gives the height of the rule back, and \cs{prevdepth} is put back: \cs{pagetotal} and the interline glue are as if the rule had never been there. The \cs{penalty}~10000 before the skip keeps a page break away from it.
+\item A \cs{penalty}~9999 offers a breakpoint after the rule, and the primitive \cs{par}, in vertical mode, runs the page builder. The \cs{par} is in a group, because it clears \cs{parshape}, which carries the indentation of a list. The page cannot hold the rule, so \TeX{} breaks at the best breakpoint it has seen: before the block, or before the heading, since a heading forbids a break after itself. The rule goes to the next page.
+\item There, a negative skip gives the height of the rule back, and \cs{prevdepth} is put back: \cs{pagetotal} and the interline glue are as if the rule had never been there. The skip sits between two \cs{penalty}~10000: the first keeps a page break away from it; the second hides it from \cs{addvspace}, which an \cs{item}, a list or a heading at the start of the block calls, and which cancels a negative skip it finds last.
 \end{enumerate}
 The rule must be taller than the room by the shrink of the page. Otherwise, when the image is only a little too tall, the page could still hold the rule by shrinking its glue: \TeX{} would break after the rule, and leave the heading alone at the bottom of the page.
 

@@ -14,7 +14,7 @@
 %% The Current Maintainer of this work is Antonin Marchand.
 % <ident>
 \NeedsTeXFormat{LaTeX2e}[2023-06-01]
-\ProvidesExplPackage{wrapblock}{2026-11-18}{0.1.1}
+\ProvidesExplPackage{wrapblock}{2026-11-18}{0.1.2}
   {Closed block with an image beside its text}
 % </ident>
 
@@ -24,7 +24,7 @@
 % at that point, from the top of the text area.
 \box_new:N  \g__wrapblock_img_box
 \tl_new:N   \g__wrapblock_img_tl        % the image, as given
-\dim_new:N  \g__wrapblock_img_width_dim % its width key (0pt: natural)
+\dim_new:N  \g__wrapblock_img_width_dim % its width key (-\maxdimen: natural)
 \dim_new:N  \l__wrapblock_width_dim
 \bool_new:N \g__wrapblock_active_bool   % a region is running
 \bool_new:N \g__wrapblock_pending_bool  % the image is not placed yet
@@ -195,9 +195,9 @@
         \hbox_set:Nn \l_tmpa_box
           {
             \cs_if_exist_use:NT \tag_mc_begin:n { { } }
-            \dim_compare:nNnTF {#4} > { 0pt }
-              { \hbox_to_wd:nn {#4} { \hfil \tl_use:c { g__wrapblock_def_ #7 _tl } \hfil } }
+            \dim_compare:nNnTF {#4} = { - \c_max_dim }
               { \tl_use:c { g__wrapblock_def_ #7 _tl } }
+              { \hbox_to_wd:nn {#4} { \hfil \tl_use:c { g__wrapblock_def_ #7 _tl } \hfil } }
             \cs_if_exist_use:N \tag_mc_end:
           }
         \put
@@ -237,11 +237,12 @@
     side  .initial:n  = r ,
     l     .meta:n     = { side = l } ,
     r     .meta:n     = { side = r } ,
-    % natural: the width of the image itself, kept as 0pt
+    % natural: the width of the image itself, kept as -\maxdimen, which no
+    % length can be; 0pt is a room of no width, like any other length
     width .code:n     =
       {
         \str_if_eq:nnTF {#1} { natural }
-          { \dim_zero:N \l__wrapblock_width_dim }
+          { \dim_set:Nn \l__wrapblock_width_dim { - \c_max_dim } }
           { \dim_set:Nn \l__wrapblock_width_dim {#1} }
       } ,
     width .initial:n  = natural ,
@@ -427,12 +428,12 @@
     \hbox_gset:Nn \g__wrapblock_img_box
       {
         \bool_set_true:N \l__wrapblock_inimage_bool
-        \dim_compare:nNnTF { \g__wrapblock_img_width_dim } > { 0pt }
+        \dim_compare:nNnTF { \g__wrapblock_img_width_dim } = { - \c_max_dim }
+          { \tl_use:N \g__wrapblock_img_tl }
           {
             \hbox_to_wd:nn { \g__wrapblock_img_width_dim }
               { \hfil \tl_use:N \g__wrapblock_img_tl \hfil }
           }
-          { \tl_use:N \g__wrapblock_img_tl }
       }
   }
 
@@ -857,9 +858,13 @@
       { \g__wrapblock_height_dim + \baselineskip + \tex_pageshrink:D + 1sp }
     \tex_hrule:D height \l__wrapblock_rule_dim depth 0pt width 0pt \scan_stop:
     \tex_penalty:D 9999 ~
-    \tex_par:D
+    % in a group: the primitive \par clears \parshape, which a list needs
+    \group_begin: \tex_par:D \group_end:
     \tex_penalty:D 10000 ~
     \skip_vertical:n { - \l__wrapblock_rule_dim }
+    % An \item, a list or a heading that starts the block calls \addvspace,
+    % which would cancel a negative skip it finds last: hide it.
+    \tex_penalty:D 10000 ~
     \tex_prevdepth:D \l__wrapblock_base_dim
   }
 % </needspace>
