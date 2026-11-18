@@ -47,7 +47,7 @@
 \title{\pkg{wrapblock}\\[0.4em]
   \large An image beside its own text, which wraps around it and runs below}
 \author{Antonin Marchand}
-\date{Version 0.1 --- 15 November 2026}
+\date{Version 0.1.1 --- 18 November 2026}
 
 \begin{document}
 \maketitle
@@ -363,6 +363,15 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
 
 \begin{description}
 \item[0.1 (15 November 2026)] First version.
+\item[0.1.1 (18 November 2026)] Corrections:
+  \begin{itemize}
+  \item in centred or ragged-left text, an image on the left was moved over the text;
+  \item a deferred image was drawn over a float at the top of its page; it is now set below it;
+  \item a float or a \cs{marginpar} in a block near the bottom of a page gave an error;
+  \item a float in a block gave the warning about a box that is too wide;
+  \item the messages now say that the line they give is that of the end of the block.
+  \end{itemize}
+  The documentation was rewritten, and now ends with the whole code, explained.
 \end{description}
 
 % =========================================================================
