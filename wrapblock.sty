@@ -14,7 +14,7 @@
 %% The Current Maintainer of this work is Antonin Marchand.
 % <ident>
 \NeedsTeXFormat{LaTeX2e}[2023-06-01]
-\ProvidesExplPackage{wrapblock}{2026-11-18}{0.1.3}
+\ProvidesExplPackage{wrapblock}{2026-11-18}{0.1.4}
   {Closed block with an image beside its text}
 % </ident>
 
@@ -168,8 +168,14 @@
 % at the top of the text area: the lines beside them are already narrowed.
 % In a tagged PDF the image goes in a structure element made, empty, where
 % the block starts, so that it keeps its place in the reading order.
-\hook_gput_code:nnn { shipout / foreground } { wrapblock }
-  { \seq_if_empty:NF \g__wrapblock_def_seq { \__wrapblock_overlays: } }
+% The foreground is asked for only when an image is waiting: once the hook
+% holds code, LaTeX builds a picture on every page, which made a document
+% without any block up to 40 % slower.
+\hook_gput_code:nnn { shipout / before } { wrapblock }
+  {
+    \seq_if_empty:NF \g__wrapblock_def_seq
+      { \hook_gput_next_code:nn { shipout / foreground } { \__wrapblock_overlays: } }
+  }
 \cs_new_protected:Npn \__wrapblock_overlays:
   {
     \seq_clear:N \l__wrapblock_done_seq

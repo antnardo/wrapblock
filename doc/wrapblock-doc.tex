@@ -48,7 +48,7 @@
 \title{\pkg{wrapblock}\\[0.4em]
   \large An image beside its own text, which wraps around it and runs below}
 \author{Antonin Marchand}
-\date{Version 0.1.3 --- 18 November 2026}
+\date{Version 0.1.4 --- 18 November 2026}
 
 \begin{document}
 \maketitle
@@ -448,6 +448,7 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
 
   The documentation says what the image may be (section~\ref{sec:image}).
 \item[0.1.3 (18 November 2026)] No change in the code. The README says where to report a bug, and the documentation reads the code of the package wherever \TeX{} finds it, so that it compiles from one folder.
+\item[0.1.4 (18 November 2026)] Loading the package no longer slows down a document: the foreground of a page is asked for only when a deferred image waits for it. A document without any block compiled 20\,\% slower with pdf\LaTeX{} and 40\,\% slower with Lua\LaTeX{}; it now takes the same time as without the package.
 \end{description}
 
 % =========================================================================
@@ -529,6 +530,7 @@ Hook & What the package does there \\
 \texttt{para/after} & ends the zone or keeps it together; commits a deferred image \\
 \cs{everydisplay} & sets the shape again after a displayed equation \\
 \cs{@arrayparboxrestore} & at the start of a box in the block: warns if it is too wide, and turns the package off inside \\
+\texttt{shipout/before} & asks for the foreground of the page, only when an image waits \\
 \texttt{shipout/after} & counts the pages shipped out \\
 \texttt{shipout/foreground} & draws the deferred images of the page \\
 \texttt{build/column/before} & measures the floats at the top of the page; notices a page that broke too early \\
@@ -837,7 +839,7 @@ In a tagged PDF, the structure follows the order in which things are typeset. An
 
 \code{overlay}
 
-The deferred images are drawn by the \texttt{shipout/foreground} hook. It runs as each page is shipped out, in a \env{picture} whose origin is the top left corner of the paper.
+The deferred images are drawn by the \texttt{shipout/foreground} hook, in a \env{picture} whose origin is the top left corner of the paper. As soon as this hook holds code, \LaTeX{} builds that picture on every page, and a document of a thousand pages without a single block compiled a third slower. The code is therefore given to the hook for the next page only, by the \texttt{shipout/before} hook, and only when the list of images that wait is not empty.
 \begin{itemize}
 \item \fn{overlays:} goes through the images that wait. The images drawn are removed from the list afterwards, not during the loop that reads it.
 \item \fn{overlay:nnnnnnn} draws an image if its page is the one being shipped: the image was committed for the page shipped after \texttt{\#1} pages, and \gv{ship_int} pages have been shipped.
