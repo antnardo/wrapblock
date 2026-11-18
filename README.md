@@ -55,7 +55,7 @@ the examples in one folder, without the tests.
 | --- | --- |
 | `wrapblock.sty` | the package |
 | `doc/wrapblock-doc.tex`, `doc/wrapblock-doc.pdf` | the documentation, which ends with the whole code, commented; it compiles with both engines, and reads `wrapblock.sty` wherever TeX finds it (`TEXINPUTS=..:` from `doc/`) |
-| `examples/` | minimal examples, one per property: `mwe-basic`, `mwe-lists`, `mwe-pagebreak`, `mwe-tagged`; `zsh examples/build.zsh` compiles them with both engines |
+| `examples/` | minimal examples, one per property: `mwe-basic`, `mwe-lists`, `mwe-pagebreak`, `mwe-tagged`, each with its PDF; `zsh examples/build.zsh` compiles them with both engines |
 | `ctan.zsh` | builds the archive for CTAN, in `../wrapblock-construction/ctan/` |
 | `tests/` | the tests: `zsh tests/run.zsh` compiles each one with both engines, plain and tagged, and reports errors, tagging warnings and text overlapping an image; it needs `python3` and `pdftotext` (poppler), and checks the tagged builds against PDF/UA-2 when `verapdf` is in the PATH |
 
