@@ -54,8 +54,10 @@ The package is written in expl3.
 ## Installation
 
 Copy `wrapblock.sty` into a TeX tree (`TEXMFHOME/tex/latex/wrapblock/`). The
-package needs a LaTeX with paragraph hooks (2021 or later); it was tested with
-TeX Live 2026.
+package needs a LaTeX kernel of June 2023 or later, which it checks, and
+pdfLaTeX or LuaLaTeX; it was tested with TeX Live 2026 only. One correction,
+for a footnote before an image sent to the next page, needs a kernel of June
+2025.
 
 ## License
 

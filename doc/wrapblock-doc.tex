@@ -36,6 +36,8 @@
 \DeclareUrlCommand\csurl{\urlstyle{tt}\def\UrlBreaks{\do\_}\def\UrlBigBreaks{\do\:}}
 \newcommand\fn[1]{\mbox{\texttt{\textbackslash\_\_wrapblock\_}}\csurl{#1}}
 \newcommand\gv[1]{\mbox{\texttt{\textbackslash g\_\_wrapblock\_}}\csurl{#1}}
+% A message of the package, then what it means.
+\newcommand\msgitem[1]{\par\medskip\noindent{\ttfamily\raggedright #1\par}\nobreak\smallskip\noindent\ignorespaces}
 \newcommand\ecs[1]{\texttt{\textbackslash}\csurl{#1}}
 \newcommand\lv[1]{\mbox{\texttt{\textbackslash l\_\_wrapblock\_}}\csurl{#1}}
 % The image of the examples, with its alternative text.
@@ -51,13 +53,23 @@
 \maketitle
 
 \begin{abstract}
-The \pkg{wrapblock} package provides a single environment that sets an image beside a block of text: the text is narrowed along the image, then takes the full width again below it. The block is closed: the image never spills over what follows. Four properties set it apart from existing wrapping packages: the text beside the image may hold lists, nested to any depth, and the block may itself open a list item; the image and the lines beside it stay on the same page; it works with pdf\LaTeX{} and Lua\LaTeX; it leaves the structure of a tagged PDF as it would be without the package.
+The \pkg{wrapblock} package provides one environment, which sets an image beside a block of text. The text is narrowed along the image, then takes the full width again below it. The block is closed: the text that follows the environment never runs beside the image.
+
+Four properties set it apart from the other wrapping packages:
+\begin{enumerate}
+\item the text beside the image may hold lists, nested to any depth, and the block may itself open a list item;
+\item the image and the lines beside it stay on the same page;
+\item it works with pdf\LaTeX{} and with Lua\LaTeX;
+\item in a tagged PDF, the structure is what it would be without the package.
+\end{enumerate}
 \end{abstract}
 
 \tableofcontents
 
 % =========================================================================
 \section{What the package does}
+
+\subsection{An example}
 
 \begin{wrapblock}{\sample}
 This paragraph is typeset by \pkg{wrapblock}. The text runs along the image, on its left, then takes the full width again once it is past it. \sampletext\sampletext
@@ -68,17 +80,23 @@ This paragraph is typeset by \pkg{wrapblock}. The text runs along the image, on 
 and the text after the list goes on wrapping, down to the bottom of the image and beyond. \sampletext
 \end{wrapblock}
 
-The text after the environment is full width, however long the block is: when the text of the block is shorter than the image, vertical space is added down to the bottom of the image (section~\ref{sec:know}).
+This paragraph comes after the environment. It is full width, however long the block is: when the text of the block is shorter than the image, vertical space is added down to the bottom of the image (section~\ref{sec:know}).
 
-The image and the lines beside it are never split by a page break. Near the bottom of a page, three cases arise:
-\begin{itemize}
-\item the image fits: the text wraps around it, and what is left of the text runs at full width on the next page;
-\item the image does not fit, and the text is long enough to fill the bottom of the page and run on: the text runs at full width to the bottom of the page, and the image goes to the top of the next page, where the text wraps around it;
-\item the image does not fit, and the text is too short to run on to the next page: at full width it would end on this page, and leave the image alone on the next one. The whole block then moves to the next page, together with the heading that precedes it, and a warning in the \texttt{.log} says so: the bottom of the page is left empty, and the author may want to change something.
-\end{itemize}
-Below the image, the text of the block breaks like any other text. The cases are shown, with long, medium and short texts, in \texttt{mwe-pagebreak.tex}, in the \texttt{examples} folder.
+In this documentation, the \emph{block} is the contents of the environment, the \emph{image} is whatever is set beside it (a picture, a diagram, a table), and the image is \emph{deferred} when it is set at the top of the next page.
 
-The package does only this. There is no image wrapped in the middle of a paragraph, no text flowing around a shape, no floating image: for those, see \pkg{wrapfig2}, \pkg{wrapstuff}, \pkg{cutwin} or \pkg{picinpar}. Section~\ref{sec:others} explains why none of them covers the four properties above.
+\subsection{Near the bottom of a page}\label{sec:bottom}
+
+The image and the lines beside it are never split by a page break. When a block starts near the bottom of a page, one of three things happens:
+\begin{enumerate}
+\item \emph{The image fits.} The text wraps around it, and what is left of the text runs at full width on the next page.
+\item \emph{The image does not fit, and the text is long.} The text runs at full width to the bottom of the page. The image is deferred: it goes to the top of the next page, where the text wraps around it.
+\item \emph{The image does not fit, and the text is short.} At full width, the text would end on this page and leave the image alone on the next one. The whole block moves to the next page instead, together with the heading that precedes it, if any. The bottom of the page is left empty, and a warning in the \texttt{.log} says so: the author may want to change something.
+\end{enumerate}
+Below the image, the text of the block breaks like any other text. The file \texttt{mwe-pagebreak.tex}, in the \texttt{examples} folder, shows the three cases with long, medium and short texts.
+
+\subsection{What it does not do}
+
+The package does only this. It does not wrap an image in the middle of a paragraph, flow text around a shape, or float the image: for those, see \pkg{wrapfig2}, \pkg{wrapstuff}, \pkg{cutwin} or \pkg{picinpar}. Section~\ref{sec:others} explains why none of them has the four properties above.
 
 % =========================================================================
 \section{Three things to know}\label{sec:know}
@@ -97,17 +115,18 @@ This paragraph comes after the block. Lengthening the text of the block, taking 
 
 \subsection{Near the bottom of a page, the text is typeset twice}
 
-When the block starts with less room left on the page than its image needs, the package typesets the text of the block a first time, at full width, in a box that it then throws away: this tells it whether the text can fill the bottom of the page (section~\ref{sec:works}). Elsewhere on the page, the text is typeset once.
+When the image does not fit at the bottom of the page, the package must know how long the text is, to choose between cases 2 and 3 of section~\ref{sec:bottom}. It typesets the text of the block a first time, at full width, in a box that it then throws away. Everywhere else on the page, the text is typeset once.
 
+This first pass leaves almost no trace:
 \begin{itemize}
-\item \LaTeX{} counters, those made by \cs{newcounter} --- equations, footnotes, list items, theorems, sections --- are put back after the measure: the numbers are right.
-\item Labels, footnotes, index entries and table-of-contents lines vanish with the box: they are written once.
-\item Anything else the text does globally is done twice. This was checked with a \TeX{} count stepped by \verb|\global\advance|, an \pkg{expl3} integer stepped by \verb|\int_gincr:N|, an \verb|\immediate\write|, and the first use of an acronym with \pkg{glossaries} and with \pkg{acro}: the first use, which prints the long form, is spent on the measure, and the text shows the short form. A \cs{gdef} is done twice too.
+\item \LaTeX{} counters, those made by \cs{newcounter} --- equations, footnotes, list items, theorems, sections --- are put back after the first pass: the numbers are right.
+\item Labels, footnotes, index entries, table-of-contents lines, floats and marginal notes vanish with the box: they come out once.
+\item But anything else the text does globally is done twice: a \cs{gdef}, an \verb|\immediate\write|, a \TeX{} count stepped globally, a global \pkg{expl3} integer. The first use of an acronym is a common case, checked with \pkg{glossaries} and with \pkg{acro}: the first use, which prints the long form, is spent on the first pass, and the text shows the short form.
 \end{itemize}
 
-When the text holds such a command, \key{defer=false} turns the measure off: near the bottom of a page, the whole block then moves to the next page when its image does not fit, and its text is typeset once. Putting the first use of an acronym outside the block is another way.
+When the text holds such a command, there are two ways out. The key \key{defer=false} turns the first pass off: a block whose image does not fit then always moves to the next page (case 3), and its text is typeset once. Or the command can be moved out of the block: the first use of an acronym, for instance.
 
-The image, for its part, is always typeset twice, at every block: once to measure it, once for good (section~\ref{sec:works}).
+The image, for its part, is typeset twice at every block, wherever it is on the page: once to measure it, once for good. An image that steps a counter steps it twice.
 
 \subsection{No verbatim in the block}
 
@@ -131,6 +150,16 @@ The text of the block is read as an argument before it is typeset, so that it ca
 \end{wrapblock}
 \end{verbatim}
 
+\subsection{Requirements}\label{sec:req}
+
+\begin{itemize}
+\item A \LaTeX{} kernel of June 2023 or later; the package checks it. It was tested with TeX~Live~2026 only.
+\item pdf\LaTeX{} or Lua\LaTeX: the tests run with both. With Xe\LaTeX, two of the examples (\texttt{mwe-pagebreak}, \texttt{mwe-lists}) were compiled once and gave the expected pages, but the tests do not run it.
+\item One correction needs a kernel of June 2025 or later: the second pass that makes room for a footnote before a deferred image (message ``The page broke too early'', section~\ref{sec:messages}). An older kernel does not have the hook it uses: the correction is then never made.
+\end{itemize}
+
+\subsection{The environment}
+
 \begin{docEnvironment}{wrapblock}{\oarg{keys}\marg{image}}
   Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The environment starts a new paragraph, and so does the text after it.
 
@@ -142,6 +171,20 @@ The text of the block is read as an argument before it is typeset, so that it ca
 \end{docCommand}
 
 \subsection{Keys}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+Key & Default & Meaning \\
+\midrule
+\key{side} & \texttt{r} & side of the image: \texttt{r} (right) or \texttt{l} (left); \key{l} and \key{r} alone are short forms \\
+\key{width} & \texttt{0pt} & width reserved for the image; \texttt{0pt} means its natural width \\
+\key{hsep} & \texttt{1em} & horizontal space between the image and the text \\
+\key{vsep} & \texttt{0.5\textbackslash baselineskip} & vertical space below the image \\
+\key{defer} & \texttt{true} & whether the image may go to the top of the next page \\
+\bottomrule
+\end{tabularx}
+\end{center}
 
 \begin{docKey}[wrapblock]{side}{=\texttt{l}\textbar\texttt{r}}{default \texttt{r}}
   The side of the image: right (\key{r}) or left (\key{l}) of the text.
@@ -159,13 +202,15 @@ The text of the block is read as an argument before it is typeset, so that it ca
   The horizontal space between the image and the text.
 \end{docKey}
 
-\begin{docKey}[wrapblock]{defer}{=\texttt{true}\textbar\texttt{false}}{default \texttt{true}}
-  Whether the image may go to the top of the next page while the text fills the bottom of this one. With \key{false}, a block whose image does not fit at the bottom of the page moves to the next page as a whole, and its text is not measured beforehand: it is typeset once (section~\ref{sec:know}).
-\end{docKey}
-
 \begin{docKey}[wrapblock]{vsep}{=\meta{length}}{default \texttt{0.5\textbackslash baselineskip}}
   The vertical space below the image, before the text takes the full width again.
 \end{docKey}
+
+\begin{docKey}[wrapblock]{defer}{=\texttt{true}\textbar\texttt{false}}{default \texttt{true}}
+  Whether the image may go to the top of the next page while the text fills the bottom of this one (case 2 of section~\ref{sec:bottom}). With \key{false}, a block whose image does not fit at the bottom of the page always moves to the next page as a whole (case 3), and its text is not typeset a first time to be measured (section~\ref{sec:know}).
+\end{docKey}
+
+The defaults of \key{hsep} and \key{vsep} are computed once, when the package is loaded, with the font and the \cs{baselineskip} of that moment: those of the normal size of the document. A length given in the document is computed where it is given.
 
 \subsection{Image on the left}
 
@@ -213,12 +258,22 @@ The text goes on below the equation, still along the image as long as it has not
 
 A footnote called in the block goes to the foot of the page, as anywhere else. A line taller than the others, with an inline fraction for instance, pushes the next ones down; since the package counts lines in \cs{baselineskip}, the wrapping may then last one line longer than needed, never one line shorter.
 
-\subsection{Boxes}
+\subsection{Centred or ragged text}
+
+\cs{centering}, \cs{raggedright} and \cs{raggedleft} work in the block, and so does a block in a \env{center}, \env{flushleft} or \env{flushright} environment: the lines are centred or ragged in the width left beside the image.
+
+\subsection{Boxes and wide material}
 
 The text of a box --- \cs{parbox}, \env{minipage}, \texttt{p} column of a table --- keeps the width it was given and is not wrapped. A box wider than the room left beside the image therefore overlaps the image; the package says so with a warning. A box set below the image raises no problem.
 
+Other material that cannot be broken --- a wide \env{tabular} without \texttt{p} column, a wide picture, a long formula --- also overlaps the image when it is wider than the room left beside it. The package does not warn about it, but \TeX{} does, with its usual \texttt{Overfull \textbackslash hbox}.
+
+\subsection{Floats}
+
+A \env{figure} or a \env{table} may be declared in the block; it floats as usual. When a float lands at the top of the page that receives a deferred image, the image is set below it, beside its text.
+
 % =========================================================================
-\section{Where the environment may be used}
+\section{Where the environment may be used}\label{sec:where}
 
 \begin{description}
 \item[In running text and in lists] All of the above.
@@ -243,34 +298,44 @@ An image of another kind --- \env{tikzpicture}, \env{tabular}, \cs{fbox} --- is 
 The package was tried with both engines, \verb|tagging=on| and \verb|pdfstandard=ua-2|, with an \cs{includegraphics}, a \env{tabular}, a \env{tikzpicture}, a \cs{parbox}, a \env{minipage} and an \cs{fbox} as image: tagpdf gives no more warnings than with the same image at the start of an ordinary paragraph, and the structure tree is the same with pdf\LaTeX{} and Lua\LaTeX. veraPDF~1.30 finds the tagged example \texttt{examples/mwe-tagged.tex} conformant to PDF/UA-2 with both engines, and finds nothing in the tests that the same document does not give without the package; with pdf\LaTeX, a footnote breaks clause~8.2.2, with or without the package. The PDF/UA conformance of a whole document does not depend on this package only.
 
 % =========================================================================
-\section{Messages}
+\section{Messages}\label{sec:messages}
 
-\begin{description}
-\item[\texttt{wrapblock blocks cannot be nested}] (error) A block in the text of another one.
-\item[\texttt{A box of width \dots{} sits beside the image}] (warning) A box wider than the room left beside the image; see Boxes above.
-\item[\texttt{The block \dots{} moved to a new page}] (warning) The text beside the image moved to another page while it was set, which only very large insertions (footnotes, floats) can cause. The wrapping may then be off by a few lines. The tests could not trigger this case, which \TeX{} avoids by moving the whole block.
-\item[\texttt{The block \dots{} is inside a box}] (information) See ``In a box''.
-\item[\texttt{The image of the block \dots{} does not fit}] (warning) The message goes on: the text is too short to run on to the next page. The whole block moved to the next page and left the bottom of this one empty; see the third case in section~1. Shortening the image, lengthening the text or moving the block solves it.
-\item[\texttt{The page broke too early \dots}] (warning) A footnote in the lines that run at full width to the bottom of the page shortened the page, which broke before them: a page with a few lines is left before the image, which is still set, at the top of the page after. The room the footnote took is written to the \texttt{.aux} file, and the next run counts the lines without it: rerun \LaTeX.
-\item[\texttt{The text of the block \dots{} ended before}] (warning) The message ends with ``the bottom of the page''. The text was measured long enough to run on to the next page, but ended on this one: its image is set after it. This should not happen; a figure in the text (a float, a very tall line) can cause it.
-\end{description}
+Each message names the input line where the block \emph{ends}, the line of its \verb|\end{wrapblock}|: the text of the block is read as a whole before anything is typeset, and \TeX{} is on that line by then. Here is what each message means, and what to do about it.
+
+\msgitem{wrapblock blocks cannot be nested.}
+\emph{Error.} A block was opened in the text of another one. Close the first block before opening the second.
+
+\msgitem{The image of the block that ends on input line \dots{} does not fit at the bottom of the page, and its text is too short \dots}
+\emph{Warning.} This is case 3 of section~\ref{sec:bottom}: the whole block moved to the next page, and the bottom of this page is empty. Shorten the image, lengthen the text, or move the block in the source.
+
+\msgitem{A box of width \dots, in the block that ends on input line \dots, sits beside the image, where only \dots{} is left.}
+\emph{Warning.} A \cs{parbox}, a \env{minipage} or a \texttt{p} cell beside the image is wider than the room left there, and overlaps the image. The warning is given once per block, for the first such box. Make the box narrower, or put it below the image.
+
+\msgitem{The page broke too early in the text of the block that ends on input line \dots}
+\emph{Warning.} The image is deferred, and a footnote in the lines that run at full width at the bottom of the page took room that was not counted: a page with only a few lines is left before the image. Rerun \LaTeX: the room the footnote took is written to the \texttt{.aux} file, and the next run counts the lines without it (this needs a kernel of June 2025, section~\ref{sec:req}).
+
+\msgitem{The text of the block that ends on input line \dots{} ended before the bottom of the page: its image is set after it.}
+\emph{Warning.} The image was deferred because the text was measured long enough to reach the next page; but the text ended on this page, and the image comes after it. This should not happen; a float or a very tall line in the text can cause it. Use \key{defer=false} for this block.
+
+\msgitem{The block that ends on input line \dots{} moved to a new page while its text was set.}
+\emph{Warning.} The lines beside the image moved to another page after their number was counted, which only a very large footnote can cause. The wrapping may be wrong by a few lines. The tests could not make this happen: \TeX{} moves the whole block before it comes to that.
+
+\msgitem{The block that ends on input line \dots{} is inside a box \dots}
+\emph{Information}, in the \texttt{.log} only. The block is in a \env{minipage}, a \cs{parbox} or the like: its text is set beside the image, without wrapping under it (section~\ref{sec:where}).
 
 % =========================================================================
-\section{How it works}\label{sec:works}
+\section{How it works, in short}\label{sec:works}
 
-The text of the block is typeset where it stands, in the main galley: nothing is boxed, which is what leaves page breaks, lists and tagging untouched.
+The text of the block is typeset where it stands, in the main galley, as ordinary paragraphs. Nothing is put in a box: this is what leaves page breaks, lists and tagging untouched. The package only changes the shape of the paragraphs.
 
 \begin{itemize}
-\item The image is typeset twice: at the start of the environment, to measure it, with tagging suspended; then in the first line of the block, where it is placed in a box with no width, height or depth. An image that steps a counter therefore steps it twice.
-\item For each paragraph of the block, the \texttt{para/begin} hook reads the shape \LaTeX{} gave the paragraph --- a \cs{parshape} in a list ---, works out from \cs{pagetotal} how many of its lines still run along the image, and narrows those with a new \cs{parshape}.
-\item No page break may separate the lines along the image. To that end, \cs{interlinepenalties} forbids breaks inside a paragraph, \cs{nobreak} forbids them between paragraphs, and the penalties of lists and equations are set to 10\,000.
-\item When the room left on the page is too small for the image, the text of the block is set at full width in a box, which is then thrown away, to measure its height. Counters are put back afterwards, and labels, footnotes and index entries vanish with the box; anything else the text does globally is done twice (section~\ref{sec:know}).
-\item A text too short to run on to the next page: the package makes \TeX{} break the page at its best earlier breakpoint --- before the heading, if a heading precedes the block --- and only then measures the room left.
-\item A long enough text: for each paragraph, the package counts the full-width lines that still fit on the page, forces the page break after the last of them with \cs{interlinepenalties}, and narrows the lines that follow, at the top of the next page. The image is set there when that page is shipped out, through the \texttt{shipout/foreground} hook. A footnote in those full-width lines shortens the page after they were counted, and the page breaks before them; the \texttt{build/column/before} hook notices it, and the room the footnotes took is kept in the \texttt{.aux} file for the next run.
-\item After a displayed equation, the remaining lines are worked out again from where the equation ended.
+\item \emph{The image} is typeset at the start of the first line of the block, in a box with no width, height or depth.
+\item \emph{Each paragraph} of the block is narrowed at its start, by a hook: the package reads on the page where the paragraph starts, works out how many of its lines run beside the image, and gives those lines a shorter length with \cs{parshape}.
+\item \emph{No page break} may separate the lines beside the image: penalties forbid it inside the paragraphs and between them.
+\item \emph{When the image does not fit} at the bottom of the page, the text is typeset once at full width, in a box that is thrown away, to measure it. A short text moves to the next page with its image. A long text stays: the package counts the lines that still fit on the page, forces the page break after the last of them, and narrows the lines that follow; the image is drawn at the top of the next page when that page is shipped out.
 \end{itemize}
 
-The package needs a \LaTeX{} with paragraph hooks (2021 or later); it is written in \pkg{expl3}, and was tested with TeX~Live~2026. The code is printed and commented in section~\ref{sec:impl}, at the end of this documentation.
+Section~\ref{sec:impl}, at the end of this documentation, prints the whole code and explains it.
 
 % =========================================================================
 \section{Other packages}\label{sec:others}
@@ -306,253 +371,428 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
 % the names of the code are long, and break only at _ and :
 \setlength{\emergencystretch}{3em}\tolerance=2000
 
-This section prints the whole of \texttt{wrapblock.sty}, with a commentary. The code is read from the file itself when this documentation is compiled, so that the two cannot drift apart; the line numbers are those of the file. The pieces are shown in the order in which they are best read, not in the order of the file: the file declares a function before it is used, and the commentary goes from the environment down to the details. In the file, each piece is framed by two comment lines, \verb|% <name>| and \verb|% </name>|, which are only there for this documentation.
+This section prints the whole of \texttt{wrapblock.sty} and explains it. It is meant for someone who wants to check, repair or extend the package; using the package does not require reading it.
 
-The package is written in \pkg{expl3}. Its internal functions are named \fn{...}, its global variables \gv{...} and its local ones \lv{...}. A few \LaTeXe{} internals are used under their own names: \cs{@labels}, \cs{@totalleftmargin}, \cs{@itempenalty}, \cs{cl@@ckpt}, \cs{@arrayparboxrestore}, and the switches \texttt{@inlabel}, \texttt{@nobreak}, \texttt{@twoside}, \texttt{@twocolumn}.
+\paragraph{How the code is shown.} The code is read from the file itself when this documentation is compiled, so that the two cannot drift apart. The line numbers are those of the file. The pieces are shown in the order in which they are best read, from the environment down to the details, not in the order of the file, where a function is declared before it is used. In the file, each piece is framed by two comment lines, \verb|% <name>| and \verb|% </name>|, which are only there for this documentation.
+
+\paragraph{Names.} The package is written in \pkg{expl3}. Its functions are named \fn{...}, its global variables \gv{...} and its local ones \lv{...}. A few \LaTeXe{} internals are used under their own names: \cs{@labels}, \cs{@totalleftmargin}, \cs{@itempenalty}, \cs{cl@@ckpt}, \cs{@arrayparboxrestore}, \cs{@toplist}, and the switches \texttt{@inlabel}, \texttt{@nobreak}, \texttt{@twoside}, \texttt{@twocolumn}.
 
 \subsection{The principle}
 
-\paragraph{The text stays in the galley.} The packages that wrap text around an image usually set the text in boxes of their own, line by line or paragraph by paragraph. \pkg{wrapblock} does not: the text of the block is typeset where it stands, in the main vertical list, as if the package were not there. It only acts at the start and at the end of each paragraph, through the paragraph hooks of \LaTeX{} (\texttt{para/before}, \texttt{para/begin}, \texttt{para/end}, \texttt{para/after}), and changes three things there: the \cs{parshape} of the paragraph, which narrows the lines that run beside the image; its \cs{interlinepenalties}, which forbids page breaks between them; and the penalties of lists and displays, which forbid page breaks between paragraphs. This is why lists, page breaks and tagging work in the block as they do elsewhere: \LaTeX{} sees ordinary paragraphs.
+\paragraph{The text stays in the galley.} Most packages that wrap text around an image set the text in boxes of their own. \pkg{wrapblock} does not: the text of the block is typeset where it stands, in the main vertical list, as if the package were not there. The package only acts at the start and at the end of each paragraph, through the paragraph hooks of \LaTeX, and changes three things there:
+\begin{itemize}
+\item the \cs{parshape} of the paragraph, to narrow the lines that run beside the image;
+\item its \cs{interlinepenalties}, to forbid a page break between those lines;
+\item the penalties of lists and displayed equations, to forbid a page break between the paragraphs beside the image.
+\end{itemize}
+\LaTeX{} sees ordinary paragraphs: this is why lists, page breaks and tagging work in the block as they do elsewhere.
 
-\paragraph{Positions on the page.} To know which lines run beside the image, the package needs the position of each line on the page. It reads it from \cs{pagetotal}, the height of the material already on the current page. All the positions it keeps are expressed the same way: the value \cs{pagetotal} would have at that point, measured from the top of the text area. The main one is \gv{bottom_dim}, the bottom of the area taken by the image, \key{vsep} included. A line whose top lies above it is narrowed; the others keep their width.
+\paragraph{The picture to keep in mind.}
 
-\paragraph{The zone.} The lines beside the image form what the code calls the \emph{zone}. It starts with the first line of the block and ends with the first paragraph that goes below the image. While the zone runs, \gv{active_bool} is true; no page break may happen inside it, and the image is placed in its first line.
+\begin{center}
+\begin{tikzpicture}[x=0.8cm, y=1cm, font=\footnotesize, txt/.style={line width=2.2pt, black!30}]
+  \draw[black!50] (0,1.5) rectangle (7,6.3);
+  \foreach \y in {5.9,5.6} \draw[txt] (0.3,\y) -- (6.7,\y);
+  \draw[fill=black!10] (4.6,3.1) rectangle (6.7,5.2);
+  \node at (5.65,4.15) {image};
+  \foreach \y in {5.1,4.8,4.5,4.2,3.9,3.6,3.3,3.0} \draw[txt] (0.3,\y) -- (4.3,\y);
+  \foreach \y in {2.7,2.4,2.1,1.8} \draw[txt] (0.3,\y) -- (6.7,\y);
+  \draw[dashed] (0.1,2.85) -- (7.3,2.85) node[right] {\gv{bottom_dim}};
+  \draw[<->] (6.85,3.1) -- (6.85,2.85);
+  \node[right] at (7.3,3.2) {\key{vsep}};
+  \draw[<->] (4.3,5.4) -- (6.7,5.4);
+  \node[right] at (7.3,5.4) {\gv{shift_dim}: image and \key{hsep}};
+  \draw[->] (-0.3,6.3) -- (-0.3,5.1);
+  \node[left, align=right] at (-0.4,5.7) {\cs{pagetotal}\\grows downwards};
+  \draw[<-] (0.3,5.1) -- (-0.4,5.1) node[left] {first line of the block};
+  \node[left, align=right] at (-0.4,4.05) {the \emph{zone}:\\narrowed lines,\\no page break};
+  \node[left, align=right] at (-0.4,2.25) {full width again};
+\end{tikzpicture}
+\end{center}
+
+\paragraph{Positions on the page.} To know which lines run beside the image, the package needs the position of each line on the page. It reads it from \cs{pagetotal}, the height of the material already on the current page. Every position it keeps is expressed the same way: the value \cs{pagetotal} would have at that point, measured downwards from the top of the text area. The main one is \gv{bottom_dim}, the bottom of the area taken by the image, \key{vsep} included. A line whose top lies above \gv{bottom_dim} is narrowed; the others keep their width.
+
+\paragraph{Vocabulary.} The code and this commentary use these words:
+\begin{description}
+\item[zone] the lines beside the image. It starts with the first line of the block and ends with the first paragraph that goes below the image. No page break may happen inside it. \gv{active_bool} is true while it runs.
+\item[pending] the image is not typeset yet; the first paragraph of the block will place it (\gv{pending_bool}).
+\item[deferred] the image does not fit at the bottom of the page and will be drawn at the top of the next one, while the text starts on this page at full width.
+\item[waiting] a deferred image whose page has not broken yet (\gv{wait_bool}).
+\item[committed] a deferred image whose page is known; it is drawn when that page is shipped out.
+\end{description}
 
 \paragraph{The life of a block.}
 \begin{enumerate}
-\item The environment reads its arguments, sets the image once to measure it, and checks the room left on the page (\fn{begin:n}).
-\item If the room is too small for the image, the package decides between three ways out (\fn{decide:n}): move the whole block to the next page (\fn{need_space:}); or, when the text is long enough, keep it here and \emph{defer} the image to the top of the next page.
-\item At the start of each paragraph, the \texttt{para/begin} hook computes how many of its lines still run beside the image, and sets \cs{parshape} accordingly (\fn{para_begin:}, \fn{shape:Nnnn}). In the first paragraph, it also puts the image at the start of the first line (\fn{place_image:}).
-\item At the end of each paragraph, the \texttt{para/after} hook decides whether the zone goes on, and if it does, forbids a page break before the next paragraph (\fn{para_after:}).
+\item The environment reads its arguments, typesets the image once to measure it, and compares its height with the room left on the page (\fn{begin:n}).
+\item If the room is too small, \fn{decide:n} chooses: either the whole block moves to the next page (\fn{need_space:}), or, when the text is long enough, the block stays and the image is deferred.
+\item At the start of each paragraph, the \texttt{para/begin} hook computes how many lines of the paragraph run beside the image, and sets \cs{parshape} (\fn{para_begin:}, \fn{shape:Nnnn}). In the first paragraph, it also puts the image at the start of the first line (\fn{place_image:}).
+\item At the end of each paragraph, the \texttt{para/after} hook decides whether the zone goes on; if it does, it forbids a page break before the next paragraph (\fn{para_after:}).
 \item At the end of the environment, vertical space is added if the text is shorter than the image (\fn{end:}).
 \end{enumerate}
-A block inside a box (a \env{minipage}, a \cs{parbox}) takes another, much simpler road, described at the end (section~\ref{sec:impl-boxes}).
+A block inside a box (a \env{minipage}, a \cs{parbox}) takes another, much simpler road (section~\ref{sec:impl-boxes}).
+
+\paragraph{Where the package hooks in.}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Hook & What the package does there \\
+\midrule
+\texttt{para/before} & keeps \cs{prevdepth}, needed to place the first line \\
+\texttt{para/begin} & sets the shape of the paragraph; places the image in the first one \\
+\texttt{para/end} & clears three penalties in the paragraph that ends the page (deferred image) \\
+\texttt{para/after} & ends the zone or keeps it together; commits a deferred image \\
+\cs{everydisplay} & sets the shape again after a displayed equation \\
+\cs{@arrayparboxrestore} & at the start of a box in the block: warns if it is too wide, and turns the package off inside \\
+\texttt{shipout/after} & counts the pages shipped out \\
+\texttt{shipout/foreground} & draws the deferred images of the page \\
+\texttt{build/column/before} & measures the floats at the top of the page; notices a page that broke too early \\
+\texttt{enddocument/afterlastpage} & writes to the \texttt{.aux} file the room footnotes took \\
+\bottomrule
+\end{tabularx}
+\end{center}
 
 \subsection{Identification and state}
 
 \code{ident}
 
-The package needs the paragraph hooks of \LaTeX{} and \cs{ProvidesExplPackage}; it asks for a kernel of June 2023, the oldest one it was tried with.
+The package asks for a kernel of June 2023: an older format stops with a clear message. Older kernels were not tried, and the package was tested with TeX~Live~2026 only. The hook \texttt{build/column/before} exists since June 2025 (section~\ref{sec:req}).
 
 \code{state}
 
-The variables of a block are global: a block runs over several paragraphs, and each paragraph is a group of its own in lists, in \env{enumerate} items, in environments. They describe:
+The variables of a block are global, because a block runs over several paragraphs, and a paragraph often ends in another group than the one the block started in (an item, an environment). They describe:
 \begin{itemize}
-\item the image: the material given (\gv{img_tl}), the box built from it (\gv{img_box}), its \key{width} key, its height plus \key{vsep} (\gv{height_dim}) and the width it takes from the lines, \key{hsep} included (\gv{shift_dim});
-\item the block: its left edge and width, read from \cs{@totalleftmargin} and \cs{linewidth} where it starts (\gv{left_dim}, \gv{width_dim}), the side of the image, and the bottom of the image area (\gv{bottom_dim});
-\item the state of the zone: running or not (\gv{active_bool}), image placed or not yet (\gv{pending_bool}), the number of lines narrowed in the current paragraph (\gv{narrowed_int}), the room left beside the image (\gv{avail_dim}), and the shapes set so far (\gv{shapes_seq}, see \fn{unstale:});
-\item the pages: the number of pages shipped out so far (\gv{ship_int}), and the value it had where the zone started (\gv{origin_ship_int}); the zone moved to another page when they differ;
-\item the penalties the block changes, saved to be put back: \cs{predisplaypenalty}, \cs{postdisplaypenalty}, \cs{@itempenalty}, \cs{@beginparpenalty}, \cs{@endparpenalty}.
+\item \emph{the image}: the material given (\gv{img_tl}), the box built from it (\gv{img_box}), its \key{width} key, its height plus \key{vsep} (\gv{height_dim}), and the width it takes from the lines, \key{hsep} included (\gv{shift_dim});
+\item \emph{the block}: its left edge and its width (\gv{left_dim}, \gv{width_dim}), the side of the image, and the bottom of the image area (\gv{bottom_dim});
+\item \emph{the zone}: running or not (\gv{active_bool}), image placed or not yet (\gv{pending_bool}), the number of lines narrowed in the current paragraph (\gv{narrowed_int}), the line width left beside the image (\gv{avail_dim}), and the shapes set so far (\gv{shapes_seq}, see \fn{unstale:});
+\item \emph{the pages}: the number of pages shipped out so far (\gv{ship_int}), and its value where the zone started (\gv{origin_ship_int}); when the two differ, the zone has moved to another page;
+\item \emph{the penalties the block changes}, saved to be put back: \cs{predisplaypenalty}, \cs{postdisplaypenalty}, \cs{@itempenalty}, \cs{@beginparpenalty}, \cs{@endparpenalty}.
 \end{itemize}
-Three local switches say where the code stands. \lv{outer_bool} is true in the text of the block itself, and false in a box inside it (a \cs{parbox}, a footnote) and in the box where the text is measured: the hooks then leave the paragraphs alone. \lv{inside_bool} is true within the environment, \lv{inbox_bool} when the block sits in a box. The remaining local variables are scratch space for the computations.
+Three local switches say where the code stands:
+\begin{itemize}
+\item \lv{outer_bool} is true in the text of the block itself. It is false in a box inside the block (a \cs{parbox}, a footnote, a float) and in the box where the text is measured: the hooks then leave the paragraphs alone.
+\item \lv{inside_bool} is true within the environment.
+\item \lv{inbox_bool} is true when the block itself sits in a box.
+\end{itemize}
+The remaining local variables are scratch space for the computations.
 
 \code{statedefer}
 
-These variables serve the deferred image only: whether one is waiting for its page break (\gv{wait_bool}), the last full-width line before that break (\gv{full_end_int}), the deferred images not yet drawn (\gv{def_seq}, numbered by \gv{def_int}), the structure element that will hold the image in a tagged PDF (\gv{struct_int}), the room the footnotes take (\gv{short_dim} and the two property lists), and \gv{breakpar_bool}, true in the paragraph that ends the page. \gv{counters_tl} and \lv{measure_box} serve the measure of the text, \gv{block_int} numbers the blocks to name them in the \texttt{.aux} file.
-
-\subsection{Counting pages}
+These variables serve the deferred image and the measure of the text:
+\begin{itemize}
+\item \gv{wait_bool}: a deferred image is waiting for its page break; \gv{full_end_int}: the number of the last full-width line before that break; \gv{breakpar_bool}: the current paragraph is the one that ends the page;
+\item \gv{def_seq}, \gv{def_int}: the deferred images committed and not yet drawn, and their numbering; \gv{struct_int}: the structure element that will hold the image in a tagged PDF; \gv{top_dim}: the height of the floats at the top of the page being built;
+\item \gv{block_int}, \gv{goal_dim}, \gv{short_dim} and the two property lists: the room footnotes take, kept from one run to the next (see the chunk \texttt{aux});
+\item \gv{text_dim}, \gv{counters_tl}, \lv{measure_box}, \lv{labels_box}, the two float boxes and the two lists of float boxes: the measure of the text (\fn{measure:n}).
+\end{itemize}
 
 \code{shipcount}
 
-\gv{ship_int} counts the pages shipped out. The page counter would not do: it can be reset or changed by the document. The count serves two purposes: to notice that the zone has moved to another page (\fn{check_ship:}), and to tell on which page a deferred image must be drawn (\fn{overlay:nnnnnnn}).
+\gv{ship_int} counts the pages shipped out. The page counter would not do: the document can reset it. The count serves two purposes: to notice that the zone has moved to another page (\fn{check_ship:}), and to know on which page a deferred image must be drawn (\fn{overlay:nnnnnnn}).
 
 \subsection{Keys}
 
 \code{keys}
 
-The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for the block only. The initial value of \key{vsep} is computed when the package is loaded, with the \cs{baselineskip} of that moment: half a line of the normal size of the document.
+The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for one block. The initial values of \key{hsep} and \key{vsep} are computed when the package is loaded, with the font and the \cs{baselineskip} of that moment.
 
 \subsection{The environment}
 
 \code{env}
 
-The environment takes its text as an argument (\texttt{+b}): the text has to be measured before it is typeset, near the bottom of a page (\fn{measure:n}). This is what forbids verbatim material in it.
+The environment takes its text as an argument (\texttt{+b}), because the text may have to be measured before it is typeset (\fn{measure:n}). This is what forbids verbatim material in it.
 
-It starts by ending the current paragraph, numbers the block, and sets its keys. The image is built once here, with tagging suspended, only to measure it: \gv{height_dim} is its total height plus \key{vsep}, \gv{shift_dim} its width plus \key{hsep}. It is built for good later, inside the first paragraph, where its structure elements belong in a tagged PDF.
-
-\ecs{mode_if_inner:TF} tells a block in a box from a block in the galley: after \cs{par}, the mode is the internal vertical mode in a \env{minipage} or a \cs{parbox}, and the outer vertical mode on the page. In the galley, \fn{begin:n} prepares the zone, and the text is then typeset, as it is, after it.
+In order, the environment:
+\begin{enumerate}
+\item ends the current paragraph, numbers the block and sets its keys;
+\item builds the image once, with tagging suspended, only to measure it: \gv{height_dim} is its height and depth plus \key{vsep}, \gv{shift_dim} its width plus \key{hsep}. The image is built for good later, inside the first paragraph;
+\item tells a block in a box from a block on the page. After \cs{par}, \TeX{} is in internal vertical mode in a \env{minipage} or a \cs{parbox}, and in outer vertical mode on the page: \ecs{mode_if_inner:TF} tests it. On the page, \fn{begin:n} prepares the zone;
+\item typesets the text, as it is.
+\end{enumerate}
 
 \code{begin}
 
-\fn{begin:n} receives the text, which it only uses to measure it. A block in the text of another block is an error: the state of a block is global, and two of them would share it.
-
-The left edge and the width of the block are read from \cs{@totalleftmargin} and \cs{linewidth}: in a list, they are those of the current item. The room left on the page is then compared with what the image needs, its height and one line more; on an empty page (\cs{pagegoal} is \cs{maxdimen} until something is put on it) there is always room. When the room is too small, \fn{decide:n} finds a way out (section~\ref{sec:impl-room}).
-
-The penalties are saved, to be put back at the end of the zone. \fn{box_check:} is put at the front of \cs{@arrayparboxrestore}, which \LaTeX{} runs at the start of every \cs{parbox}, \env{minipage}, \texttt{p} cell and footnote: it warns about a box too wide for the room left beside the image, and turns \lv{outer_bool} off inside the box (section~\ref{sec:impl-boxes}). The change is local, and ends with the environment.
-
-Two states follow. In the normal one, the image is pending: \gv{pending_bool} is true, and the first paragraph will place it. When the image is deferred, the zone is set up on the next page already: its bottom is computed from \cs{topskip}, the position of the first baseline of a page; \gv{goal_dim} keeps the \cs{pagegoal} of this point, to see later how much the footnotes took; \gv{short_dim} reads the room the footnotes took in the previous run, if any; and an empty structure element is made where the block starts, for the tagged PDF (\fn{placeholder:}).
+\fn{begin:n} receives the text only to measure it if needed. In order:
+\begin{enumerate}
+\item A block in the text of another block is an error: the state of a block is global, and two blocks would share it.
+\item The left edge and the width of the block are read from \cs{@totalleftmargin} and \cs{linewidth}: in a list, they are those of the current item.
+\item The room left on the page is compared with what the image needs: its height and one line more. On an empty page there is always room (\cs{pagegoal} is \cs{maxdimen} until something is put on the page). When the room is too small, \fn{decide:n} finds a way out (section~\ref{sec:impl-room}).
+\item The penalties are saved, to be put back at the end of the zone.
+\item \fn{box_check:} is put at the front of \cs{@arrayparboxrestore}, which \LaTeX{} runs at the start of every \cs{parbox}, \env{minipage}, \texttt{p} cell, footnote and float. It warns about a box too wide for the room beside the image, then turns \lv{outer_bool} off inside the box (section~\ref{sec:impl-boxes}). The change is local to the environment.
+\item The state of the image is set. Normally the image is pending: the first paragraph will place it. When \fn{decide:n} has deferred it, the zone is prepared on the next page instead: its bottom is computed from \cs{topskip}, the first baseline of a page; \gv{goal_dim} keeps the \cs{pagegoal} of this point and \gv{short_dim} the room footnotes took in the previous run (see the chunk \texttt{aux}); and an empty structure element is made for the tagged PDF (\fn{placeholder:}).
+\end{enumerate}
 
 \code{end}
 
-At the end of the text, \fn{end:} first handles a deferred image whose page never broke: the text, measured long enough to reach the next page, ended on this one. This should not happen, but a float or a tall line can cause it. The image then goes back to the pending state, after the text, on this page if it fits, on the next one otherwise.
-
-An image still pending at this point --- an empty block, or the case above --- is placed in a paragraph made of an empty line.
-
-Finally, if the text ended above the bottom of the image, vertical space is added down to it, with \cs{nobreak} before it, so that the next text starts below the image; this is what keeps the block closed. \fn{stop:} then ends the zone and puts the penalties back.
+At the end of the text, \fn{end:} deals with three cases, in order:
+\begin{enumerate}
+\item \emph{A deferred image is still waiting.} The text was measured long enough to reach the next page, but it ended on this one. This should not happen; a tall line can cause it. The image goes back to the pending state, and the page is broken first if the image does not fit after the text.
+\item \emph{The image is still pending}, because the block is empty or because of the case above. A paragraph made of one empty line is typeset to carry it.
+\item \emph{The text ended above the bottom of the image.} Vertical space is added down to it, with \cs{nobreak} before it. The next text thus starts below the image: this is what closes the block.
+\end{enumerate}
+\fn{stop:} then ends the zone and puts the penalties back.
 
 \subsection{Is there room for the image?}\label{sec:impl-room}
 
 \code{room}
 
-The room left on the page is \cs{pagegoal} minus \cs{pagetotal}. Right after a heading, one correction is needed. A heading puts below itself a space, and forbids a break after itself; but the page builder only moves that space to the page when the next box comes, so \cs{pagetotal} does not count it yet. That space is the last item of the vertical list, and \cs{lastskip} gives it. When the page ends with some other glue, it is subtracted twice; the room is then a little smaller than it is, which can only make the image move when it would have fitted, never overflow.
+The room left on the page is \cs{pagegoal} minus \cs{pagetotal}, with one correction right after a heading. A heading puts a space below itself, but the page builder only moves that space to the page when the next box comes: \cs{pagetotal} does not count it yet. That space is the last item of the vertical list, and \cs{lastskip} gives it.
+
+When the block does not follow a heading and the page ends with some other glue, that glue is subtracted although \cs{pagetotal} already counts it. The room is then found a little smaller than it is. The error is on the safe side: the block may move when its image would just have fitted, but the image never overflows.
 
 \code{decide}
 
-\fn{decide:n} is called when the image does not fit. It always starts with the block in place, and ends either with \lv{defer_bool} true, or with the page broken by \fn{need_space:} and the block at the top of the next page.
-\begin{itemize}
-\item In two columns, or in a \env{multicols} environment with more than one column, the image is never deferred: the overlay of \fn{overlay:nnnnnnn} only knows the page, not the column. The whole block moves.
-\item With \key{defer=false}, or with less than two lines of room, the block moves too: there is no point running two lines at full width, and the text is not measured.
-\item Otherwise, the text is measured at full width. If it does not fill the room left and two lines of the next page, the image would be left alone on the next page: the block moves, with a warning. If it does, the image is deferred.
-\end{itemize}
+\fn{decide:n} is called when the image does not fit. It ends in one of two states: \lv{defer_bool} is true, and the block stays; or \fn{need_space:} has broken the page, and the block is at the top of the next one. The tests come in this order:
+\begin{enumerate}
+\item \emph{Two columns}, or a \env{multicols} environment with more than one column: the block moves. A deferred image is drawn at the top of the page, and the package does not know the column.
+\item \emph{\key{defer=false}, or less than two lines of room}: the block moves, and the text is not measured.
+\item \emph{Otherwise the text is measured} at full width. A deferred image needs a text that fills the room left on this page, and two lines of the next page. A shorter text would leave the image alone on the next page: the block moves, with the warning \texttt{short}. A longer one stays, and the image is deferred.
+\end{enumerate}
 
 \code{needspace}
 
-Moving the block to the next page is less simple than issuing \cs{newpage}: a block that follows a heading must take the heading with it, and \cs{newpage} would leave the heading alone at the bottom of the page. The page builder of \TeX{} is used instead, which knows where the best break before this point is.
-
-An invisible rule, as tall as the image plus a line, is put on the page, with a breakpoint after it (\cs{penalty}~9999). The primitive \cs{par}, in vertical mode, runs the page builder. The page cannot hold the rule, so \TeX{} breaks it at the best breakpoint it has seen: just before the block, through the \cs{penalty}~0 put in front of the rule, or, after a heading (\texttt{@nobreak} is then true and no such penalty is put), before the heading, since a heading forbids a break after itself. The rule goes to the next page with the heading, if any. There, a negative skip as tall as the rule gives its height back, and \cs{prevdepth} is put back, so that \cs{pagetotal} and the interline glue are as if the rule had never been there.
-
-The rule is taller than the room needed by the shrink of the page (\cs{pageshrink}) plus 1\,sp. Without it, when the image is only a little too tall, the page still fits by shrinking its glue: \TeX{} takes the breakpoint after the rule, and the heading is left alone at the bottom of the page. The \cs{penalty}~10000 after the rule protects the negative skip, which must not be discarded at a break.
+To move the block to the next page, \cs{newpage} would not do: a block that follows a heading must take the heading with it. The package lets the page builder of \TeX{} choose the break, since it knows the best breakpoint before this point. In order:
+\begin{enumerate}
+\item \cs{prevdepth} is kept, to be put back at the end.
+\item A \cs{penalty}~0 offers a breakpoint just before the block; not after a heading (\texttt{@nobreak} is then true), which must stay with the block.
+\item An invisible rule is added, too tall for the page: as tall as the image area plus a line, plus the shrink of the page (\cs{pageshrink}) and 1\,sp.
+\item A \cs{penalty}~9999 offers a breakpoint after the rule, and the primitive \cs{par}, in vertical mode, runs the page builder. The page cannot hold the rule, so \TeX{} breaks at the best breakpoint it has seen: before the block, or before the heading, since a heading forbids a break after itself. The rule goes to the next page.
+\item There, a negative skip gives the height of the rule back, and \cs{prevdepth} is put back: \cs{pagetotal} and the interline glue are as if the rule had never been there. The \cs{penalty}~10000 before the skip keeps a page break away from it.
+\end{enumerate}
+The rule must be taller than the room by the shrink of the page. Otherwise, when the image is only a little too tall, the page could still hold the rule by shrinking its glue: \TeX{} would break after the rule, and leave the heading alone at the bottom of the page.
 
 \code{measure}
 
-The measure typesets the text at full width in a \cs{vbox} that is then thrown away, and keeps its height and depth in \gv{text_dim}. Whatever the text writes to a file without \cs{immediate} (labels, table of contents, index) and whatever it inserts (footnotes) vanish with the box. Its other global effects must be undone by hand:
+The measure typesets the text at full width in a \cs{vbox} that is thrown away, and keeps its height and depth in \gv{text_dim}. Whatever the text writes to a file without \cs{immediate} (labels, table of contents, index) and its footnotes vanish with the box. Its other global effects are undone by hand:
 \begin{itemize}
-\item the \LaTeX{} counters: \cs{cl@@ckpt} lists them all, as \cs{@elt}\marg{name}; \cs{@elt} is redefined to append to \gv{counters_tl} a command that sets each counter back to its value;
-\item \cs{@labels}, the box where \cs{item} leaves its label for the next paragraph: a block that opens an item would set the label in the measure, and leave none for the text. It is copied to a local box, and \cs{@labels} is set from that copy before and after the measure;
-\item the switches of lists and headings (\texttt{@inlabel}, \texttt{@newlist}, \texttt{@noparitem}, \texttt{@minipage}, \texttt{@nobreak}), which the first paragraph of the text resets: \texttt{@nobreak}, if it were left false, would let the page break between a heading and the block.
+\item \emph{The \LaTeX{} counters.} \cs{cl@@ckpt} lists them all, as \cs{@elt}\marg{name}. \cs{@elt} is redefined so that running the list appends to \gv{counters_tl} one command per counter, which sets it back to its present value.
+\item \emph{The label of an item.} \cs{@labels} is the box where \cs{item} leaves its label for the next paragraph. A block that opens an item would use the label in the measure, and leave none for the text. The box is copied, and set again from the copy after the measure.
+\item \emph{The switches of lists and headings} (\texttt{@inlabel}, \texttt{@newlist}, \texttt{@noparitem}, \texttt{@minipage}, \texttt{@nobreak}), which the first paragraph of the text turns off. They are appended to \gv{counters_tl} as well. Without this, \texttt{@nobreak} would be left false after a heading, and the page could break between the heading and the block.
+\item \emph{Floats and \cs{marginpar}.} They cannot leave a box. Between two paragraphs, \LaTeX{} notices the box and gives the error ``Not in outer par mode'': the error is turned off, and the float is set in a box of the package. Inside a paragraph, \LaTeX{} does not notice it and takes one of its float boxes, which would end as ``Float(s) lost'': its two lists of float boxes, \cs{@freelist} and \cs{@currlist}, are put back after the measure.
 \end{itemize}
-In the box, \lv{outer_bool} is false, so that the hooks of the package leave the text alone; the width is \cs{linewidth}, without the list indentation (\cs{@totalleftmargin} and \cs{parshape} set to zero), and overfull and underfull boxes are not reported, since the box is never seen. Tagging is suspended during the measure, so that nothing of the text goes into the structure tree twice. Other global effects (an \cs{immediate}\cs{write}, a \cs{gdef}, a counter of \TeX{} or \pkg{expl3}) are done twice: section~\ref{sec:know} lists them.
+In the box, \lv{outer_bool} is false, so that the hooks of the package leave the text alone. The width is \cs{linewidth}, without the indentation of a list (\cs{@totalleftmargin} and \cs{parshape} are cleared). Overfull and underfull boxes are not reported, since the box is never seen. Tagging is suspended, so that nothing of the text goes into the structure tree twice.
+
+What is not undone is done twice: an \cs{immediate}\cs{write}, a \cs{gdef}, a \TeX{} or \pkg{expl3} counter stepped globally (section~\ref{sec:know}).
 
 \subsection{Each paragraph of the block}
 
 \code{parahooks}
 
-The hooks act only when a zone runs and in the text of the block itself (\lv{outer_bool}). \texttt{para/before} runs in vertical mode, after \LaTeX{} has added \cs{parskip} and run the page builder: it keeps \cs{prevdepth}, the depth of the last line before the paragraph, which the first line of the paragraph needs to know where it lies. \texttt{para/begin} runs in horizontal mode, before the first character of the paragraph and before \LaTeX{} puts the indentation box back; this is where the \cs{parshape} can still be changed for the paragraph, and where the image is placed, at the very start of the first line.
+The two hooks act only while a zone runs, and only in the text of the block itself (\lv{outer_bool}).
+\begin{itemize}
+\item \texttt{para/before} runs in vertical mode. \LaTeX{} has already added \cs{parskip} and run the page builder. The hook keeps \cs{prevdepth}, the depth of the line before the paragraph.
+\item \texttt{para/begin} runs in horizontal mode, before the first character of the paragraph, and before \LaTeX{} puts the indentation box back. The \cs{parshape} of the paragraph can still be set there, and the image is placed there, at the very start of the first line.
+\end{itemize}
 
 \code{baseline}
 
-The baseline of the first line of the paragraph, in page coordinates. On an empty page, it is \cs{topskip}. Otherwise, the page builder has already taken the \cs{parskip} glue when \texttt{para/begin} runs, and glue on the page adds the depth of the previous line to \cs{pagetotal}. The previous baseline therefore lies at \cs{pagetotal} minus \cs{prevdepth}, and the new one a \cs{baselineskip} lower. When \cs{prevdepth} is $-1000$\,pt or less (after a rule, or \cs{nointerlineskip}), \TeX{} puts no interline glue, and the top of the line, approximated by a strut, sits right at \cs{pagetotal}.
+This function gives the baseline of the first line of the paragraph, in page coordinates. There are three cases:
+\begin{itemize}
+\item \emph{An empty page}: the first baseline is at \cs{topskip}.
+\item \emph{The usual case.} When \texttt{para/begin} runs, the page builder has taken the \cs{parskip} glue, and a glue on the page adds the depth of the line before it to \cs{pagetotal}. The baseline of that line is therefore at \cs{pagetotal} minus its depth, kept by \texttt{para/before}; the new baseline is one \cs{baselineskip} lower.
+\item \emph{No interline glue} (\cs{prevdepth} is $-1000$\,pt or less, after a rule or \cs{nointerlineskip}): the line sits right below \cs{pagetotal}, and its baseline is taken a strut height lower.
+\end{itemize}
 
 \code{parabegin}
 
-\fn{para_begin:} sends a paragraph of a deferred block to \fn{defer_para:N} (section~\ref{sec:impl-defer}), and the others to \fn{para_begin_aux:}. There, the first paragraph of the zone fixes its bottom: the top of the first line, which is its baseline minus the height of a strut, plus the height of the image. The next paragraphs check that the zone has not moved to another page. The shape is then computed. If some lines run beside the image, the display penalties forbid page breaks around a displayed equation, and the first paragraph places the image; if none does, the paragraph starts below the image and the zone is over.
+\fn{para_begin:} computes the first baseline, then sends a paragraph of a waiting deferred image to \fn{defer_para:N} (section~\ref{sec:impl-defer}), and the others to \fn{para_begin_aux:}. There:
+\begin{enumerate}
+\item The first paragraph of the zone, the one that finds the image pending, fixes the bottom of the image area: the top of its first line (its baseline minus the height of a strut) plus \gv{height_dim}. The following paragraphs only check that the zone has not moved to another page.
+\item The shape is computed by \fn{shape:nn}.
+\item If some lines run beside the image, the penalties around displayed equations are set to 10\,000, and the first paragraph places the image. If none does, the paragraph starts below the image: the zone is over.
+\end{enumerate}
 
 \code{shape}
 
-\fn{shape:Nnnn} is the heart of the package. It computes the \cs{parshape} and the \cs{interlinepenalties} of the paragraph. Its arguments are:
+\fn{shape:Nnnn} is the heart of the package: it sets the \cs{parshape} and the \cs{interlinepenalties} of the paragraph. Its arguments are:
+\begin{description}
+\item[\texttt{\#1}] nothing, or \cs{global} after a displayed equation (section~\ref{sec:impl-display});
+\item[\texttt{\#2}] the number of lines of the paragraph already typeset, before a displayed equation; 0 at the start of a paragraph;
+\item[\texttt{\#3}] the number of lines kept at full width before the narrowed ones, for a deferred image; 0 otherwise;
+\item[\texttt{\#4}] the baseline of the first line to narrow.
+\end{description}
+\fn{shape:nn} and \fn{shape:Nnn} are short forms for the usual cases, where \texttt{\#3} is 0.
+
+\emph{How many lines are narrowed.} The lines to narrow are those whose top lies above \gv{bottom_dim}. Line $k$, counted from 0, has its baseline at \(\text{\#4} + k\,\text{\cs{baselineskip}}\) and its top a strut height higher. It is narrowed when \(k < (\text{\gv{bottom_dim}} - \text{\#4} + h_{\text{strut}}) / \text{\cs{baselineskip}}\): the count is the ceiling of that ratio. A line taller than a strut pushes the next ones down; the count is then one line too large, never too small. A line may be narrowed below the image, but no line runs over it.
+
+\emph{How wide they are.} The narrowed lines are cut from the shape \LaTeX{} gave the paragraph, which is not always the full width: in a list, \LaTeX{} sets a \cs{parshape} of one line, with the indentation and the width of the item. With the image on the left, the indentation of the line grows by \gv{shift_dim} and its width shrinks as much. With the image on the right, the line keeps its indentation and ends \gv{shift_dim} before the right edge of the block; a nested list, which starts further right, loses less of its own width. The width left is kept in \gv{avail_dim}, for \fn{box_check:}.
+
+\emph{The two lists.} The new \cs{parshape} lists, in order: \texttt{\#2} entries for the lines already typeset (their values no longer matter, but \cs{parshape} counts from the first line of the paragraph); \texttt{\#3} full-width lines; the narrowed lines; and a last entry, the shape \LaTeX{} had given, which \TeX{} repeats for all the lines that follow. \cs{interlinepenalties} follows the same order:
 \begin{itemize}
-\item \texttt{\#1}: nothing, or \cs{global} after a displayed equation (see section~\ref{sec:impl-display});
-\item \texttt{\#2}: the number of lines of the paragraph already set, before a displayed equation; 0 at the start of a paragraph;
-\item \texttt{\#3}: the number of lines kept at full width before the narrowed ones, for a deferred image; 0 otherwise;
-\item \texttt{\#4}: the baseline of the first line to narrow.
+\item after a narrowed line, 10\,000: the zone cannot break across pages;
+\item after a full-width line, the usual \cs{interlinepenalty};
+\item after the last full-width line, $-10\,000$: this forces the page break of a deferred image. A lower value is not used: \LaTeX{} keeps those for its own output routine.
 \end{itemize}
-\fn{shape:nn} and \fn{shape:Nnn} are the short forms of the usual cases.
+For instance, in the usual case (\texttt{\#2} and \texttt{\#3} are 0), a paragraph of full width 345\,pt with four lines beside an image that takes 100\,pt on the right gets
+\begin{verbatim}
+\parshape 5  0pt 245pt  0pt 245pt  0pt 245pt  0pt 245pt  0pt 345pt
+\interlinepenalties 5  10000 10000 10000 10000 0
+\end{verbatim}
 
-The lines to narrow are those whose top lies above the bottom of the image area, \gv{bottom_dim}. Line $k$, counted from 0, has its baseline at \(\text{\#4} + k\,\text{\cs{baselineskip}}\) and its top a strut height higher, so it is narrowed when \(k < (\text{\gv{bottom_dim}} - \text{\#4} + h_{\text{strut}}) / \text{\cs{baselineskip}}\): the count is the ceiling of that ratio. A line taller than a strut pushes the next ones down, and the count is then one line too large, never too small: a line may be narrowed below the image, but no line runs over it.
-
-The narrowed lines are cut from the shape \LaTeX{} gave the paragraph, which is not always the full width: in a list, \LaTeX{} sets a \cs{parshape} of one line, with the indentation and width of the item. The narrowed line keeps the side away from the image, and gives up the room of the image, \gv{shift_dim}, on the other side. On the left, its indentation grows by \gv{shift_dim}. On the right, it ends where the room of the image starts, \gv{shift_dim} before the right edge of the block, whatever its indentation: a nested list, which starts further right, gives up less of its own width. The width left is kept in \gv{avail_dim}, for \fn{box_check:}.
-
-The new \cs{parshape} lists, in order: \texttt{\#2} entries for the lines already set (their values no longer matter, but \cs{parshape} counts from the first line of the paragraph); \texttt{\#3} full-width lines; the narrowed lines; and a last entry, the shape \LaTeX{} had given, which \TeX{} repeats for all the lines after. \cs{interlinepenalties} follows the same order. After a narrowed line, a break is forbidden (10\,000), so that the zone cannot break across pages; after a full-width line, the penalty is the usual \cs{interlinepenalty}, except after the last one, where $-10\,000$ forces the page break of a deferred image. A value below $-10\,000$ is not used: \LaTeX{} keeps those for its own output routine, and loses a page with them.
-
-The signature of each shape --- its number of lines, the indentation and width of its first entry --- is kept in \gv{shapes_seq}, for \fn{unstale:}.
+\emph{The signature.} The number of entries of each shape, with the indentation and the width of its first entry, is kept in \gv{shapes_seq}, for \fn{unstale:}.
 
 \code{unstale}
 
-\TeX{} resets \cs{parshape} at the end of every paragraph, but locally, as it was set. A paragraph that ends inside a group deeper than the one it started in --- an item whose text opens a nested list --- leaves its shape behind when the group ends, and the next paragraph of the outer level gets the narrowed shape again. \fn{unstale:} recognises such a shape at the start of a paragraph of the block: a \cs{parshape} of more than one line whose signature is among those the block has set. It then keeps only its last entry, the shape \LaTeX{} had given.
+\TeX{} clears \cs{parshape} at the end of every paragraph, but only locally. Suppose a paragraph ends inside a deeper group than the one it started in: an item whose text opens a nested list, for instance. When that group ends, the narrowed shape comes back, and the next paragraph of the outer level would be narrowed a second time. \fn{unstale:} recognises such a leftover at the start of a paragraph of the block: a \cs{parshape} of more than one line whose signature is among those the block has set. It keeps only its last entry, which is the shape \LaTeX{} had given.
 
 \subsection{Setting the image}
 
 \code{build}
 
-\fn{build:} sets the image in \gv{img_box}, centred in the width of the \key{width} key when one is given. It is called twice: by the environment, to measure the image, and by \fn{place_image:}, inside the first paragraph. In a tagged PDF, an \cs{fbox}, a \env{tabular} or a \cs{parbox} built outside a paragraph would open its structure elements at the wrong place.
+\fn{build:} typesets the image in \gv{img_box}, centred in the width of the \key{width} key when one is given. It is called twice: by the environment, to measure the image, and by \fn{place_image:}, inside the first paragraph. The second call is not a waste: in a tagged PDF, an \cs{fbox}, a \env{tabular} or a \cs{parbox} built outside a paragraph would open its structure elements at the wrong place.
 
-\fn{place_image:} puts the image at the start of the first line of the block, in a box of zero width, height and depth: the line keeps its height and its natural width. The first line starts at its own indentation, the narrowed one; a kern moves the image from there to the left edge of the block, or to its right edge minus the width of the image. The image is lowered so that its top is at the top of the first line, a strut height above the baseline.
+\fn{place_image:} puts the image at the start of the first line of the block:
+\begin{itemize}
+\item The image goes in a box of zero width, height and depth, so that the line keeps its height and its natural width.
+\item The first line starts at its own indentation, the narrowed one. A kern moves the image from there to the left edge of the block, or to its right edge minus the width of the image.
+\item The image is lowered so that its top is at the top of the first line, a strut height above the baseline.
+\item In centred or ragged-left text, \cs{leftskip} comes before the image in the line, and would move it. The opposite glue is put before the image, and \cs{leftskip} again after it: the two cancel exactly, whatever their stretch, and the image is back at the start of the line. The two penalties forbid a line break at these glues.
+\end{itemize}
 
 \code{labels}
 
-When the block opens an \cs{item}, \LaTeX{} sets the label at the start of the first line, in \cs{@labels}, with a negative kern that puts it in the margin. With the image on the left, the first line starts after the image, and the label would land on the image. The label box is wrapped in two kerns that move it back by the width of the image, keeping its total width.
+When the block opens an \cs{item}, \LaTeX{} typesets the label at the start of the first line, from the box \cs{@labels}; the label reaches into the margin by a negative kern. With the image on the left, the first line starts after the image, and the label would land on the image. The label box is wrapped in two kerns: the first moves the label back by \gv{shift_dim}, the second gives the width back.
 
 \subsection{Keeping the zone on one page}
 
 \code{paraafter}
 
-At the end of each paragraph, \fn{para_after:} clears the \cs{interlinepenalties} of the paragraph (\TeX{} keeps them, unlike \cs{parshape}), and puts back the display penalties. After a displayed equation, both were set globally, and are cleared globally.
+At the end of each paragraph, \fn{para_after:} first tidies up: it clears the \cs{interlinepenalties} of the paragraph (\TeX{} keeps them, unlike \cs{parshape}) and puts back the penalties around displayed equations. After a displayed equation, shape and penalties were set globally, and are cleared globally.
 
-For a deferred image, the branch with \gv{wait_bool} is described with \fn{commit:n}, in section~\ref{sec:impl-defer}. Otherwise, \fn{zone_after:} decides whether the zone goes on. A paragraph with more lines than were narrowed went below the image, and the zone is over. Otherwise, the primitive \cs{par} has run the page builder, and \cs{pagetotal} plus \cs{pagedepth} says where the paragraph ended. If it ended above the bottom of the image, the next paragraph still starts beside it: \cs{nobreak} forbids a page break between the two, and the list penalties do the same if that paragraph starts or ends a list, or is an item.
+The branch for a waiting deferred image is explained in section~\ref{sec:impl-defer}. Otherwise \fn{zone_after:} decides whether the zone goes on:
+\begin{itemize}
+\item \emph{The paragraph has more lines than were narrowed}: it went below the image, and the zone is over.
+\item \emph{Otherwise}, the primitive \cs{par} has run the page builder, and \cs{pagetotal} plus \cs{pagedepth} is where the paragraph ended. If that is above the bottom of the image, the next paragraph starts beside the image too. \cs{nobreak} forbids a page break between the two paragraphs, and the list penalties do the same when the next paragraph is an item, or starts or ends a list. If the paragraph ended at or below the bottom of the image, the zone is over.
+\end{itemize}
 
 \code{listpen}
 
-\cs{@itempenalty}, \cs{@beginparpenalty} and \cs{@endparpenalty} are the penalties \LaTeX{} puts before an item, at the start and at the end of a list. They are set globally to 10\,000 while the zone runs, and put back by \fn{stop:}, which ends the zone.
+\cs{@itempenalty}, \cs{@beginparpenalty} and \cs{@endparpenalty} are the penalties \LaTeX{} puts before an item, before a list and after a list. They are set globally to 10\,000 while the zone runs. \fn{stop:} ends the zone and puts them back.
 
 \code{checkship}
 
-All the penalties above forbid a page break in the zone; but a footnote can still make the page too short for the lines already counted, and \TeX{} then breaks where it can. \fn{check_ship:} notices it, by comparing the count of pages shipped with its value at the start of the zone. The zone is then assumed to go on at the top of the new page, and a warning says that the wrapping may be wrong by a few lines. The tests could not make this happen: \TeX{} prefers to move the whole block.
+All these penalties forbid a page break in the zone. A footnote can still make the page too short for lines that were already counted, and \TeX{} then breaks where it can. \fn{check_ship:} notices it: the number of pages shipped is no longer what it was at the start of the zone. The zone is then assumed to go on at the top of the new page, and the warning \texttt{moved} says that the wrapping may be wrong by a few lines. The tests could not make this happen: \TeX{} moves the whole block before it comes to that.
 
 \subsection{Displayed equations}\label{sec:impl-display}
 
 \code{display}
 
-A displayed equation interrupts a paragraph: \TeX{} breaks the lines before it, sets the display, then goes on with the same paragraph, whose \cs{parshape} still counts from its first line. Below the display, the lines are no longer where \fn{shape:Nnnn} thought: the display has its own height and spacing.
-
-\cs{everydisplay} gets \fn{display_hook:}, which puts \fn{after_display:} right after the end of the display group, with \ecs{group_insert_after:N}. There, the display is on the page, the page builder has run, and \cs{prevgraf} gives the number of lines already set, the display counting as three. The baseline of the next line is estimated from \cs{pagetotal}, with the depth of a strut for that of the display, and the shape is computed again, from line \cs{prevgraf} on.
-
-The shape is set globally: with \pkg{amsmath}, the end of an \env{equation} or an \env{align} is followed by the end of the environment group, which would undo a local \cs{parshape}. \gv{global_bool} tells \fn{para_after:} to clear it globally.
-
-The display penalties set by \fn{para_begin_aux:} forbid a break just before and just after the display.
+A displayed equation interrupts a paragraph without ending it. \TeX{} breaks the lines before the equation, typesets the equation, then goes on with the same paragraph, whose \cs{parshape} still counts from its first line. But below the equation, the lines are no longer where \fn{shape:Nnnn} expected them: the equation has its own height and its own spacing. The shape must be computed again.
+\begin{itemize}
+\item \fn{display_hook:} is added to \cs{everydisplay}. It uses \ecs{group_insert_after:N} to run \fn{after_display:} right after the end of the equation.
+\item At that point, the equation is on the page and the page builder has run. \cs{prevgraf} is the number of lines typeset so far, the equation counting for three. The baseline of the next line is estimated from \cs{pagetotal}, taking the depth of a strut for that of the equation.
+\item The shape is computed again from line \cs{prevgraf} on: this is what the argument \texttt{\#2} of \fn{shape:Nnnn} is for.
+\end{itemize}
+The shape is set globally. With \pkg{amsmath}, the end of an \env{equation} or an \env{align} is followed by the end of the group of the environment, which would undo a local \cs{parshape}. \gv{global_bool} tells \fn{para_after:} to clear it globally too.
 
 \subsection{The deferred image}\label{sec:impl-defer}
 
-When the image does not fit at the bottom of the page and the text is long enough, the text runs at full width to the bottom of the page, and the image goes to the top of the next one. The package must then do two things that \TeX{} does not do by itself: break the page after a given line, and draw an image on a page it is not typeset on.
+When the image does not fit at the bottom of the page and the text is long enough, the text runs at full width to the bottom of the page, and the image goes to the top of the next one.
+
+\begin{center}
+\begin{tikzpicture}[x=0.85cm, y=1cm, font=\footnotesize, txt/.style={line width=2.2pt, black!30}]
+  \draw[black!50] (0,0) rectangle (4.4,5.6);
+  \foreach \y in {5.2,4.9,4.6,4.3,4.0,3.7,3.4,3.1,2.8,2.5} \draw[txt] (0.3,\y) -- (4.1,\y);
+  \draw[line width=2.6pt, black!70] (0.3,2.0) -- (2.2,2.0);
+  \foreach \y in {1.5,1.2,0.9,0.6} \draw[txt] (0.3,\y) -- (4.1,\y);
+  \node[above] at (2.2,5.6) {the page where the block starts};
+  \node[left, align=right] at (-0.1,2.0) {heading};
+  \node[left, align=right] at (-0.1,1.05) {the block starts:\\full-width lines};
+  \draw[<-] (4.1,0.5) -- (4.9,-0.2);
+  \node[below, align=center] at (5.6,-0.2) {forced page break ($-10\,000$)\\after the last line that fits};
+  \draw[black!50] (6.8,0) rectangle (11.2,5.6);
+  \draw[fill=black!10] (9.1,3.1) rectangle (10.9,5.3);
+  \node at (10.0,4.2) {image};
+  \foreach \y in {5.2,4.9,4.6,4.3,4.0,3.7,3.4,3.1} \draw[txt] (7.1,\y) -- (8.8,\y);
+  \foreach \y in {2.8,2.5,2.2,1.9,1.6} \draw[txt] (7.1,\y) -- (10.9,\y);
+  \node[above] at (9.0,5.6) {the next page};
+  \node[right, align=left] at (11.3,4.2) {drawn when the\\page is shipped out};
+  \node[right, align=left] at (11.3,2.2) {the block goes on};
+\end{tikzpicture}
+\end{center}
+
+\TeX{} does neither of two things by itself: break the page after a given line of a paragraph, and draw an image on a page where it was not typeset. The image goes through three states: \emph{waiting}, from the start of the block until the page breaks; \emph{committed}, once its page is known; drawn, when that page is shipped out.
 
 \code{deferpara}
 
-\fn{defer_para:N} runs at the start of each paragraph of a deferred block, and after each display in it, until the page breaks. It counts the full-width lines that still fit on the page: those whose bottom, a strut depth below their baseline, lies above the room available. That room is \cs{pagegoal}, minus what the footnotes will still take: the room they took in the previous run (\gv{short_dim}, read from the \texttt{.aux} file) minus what they take already, which \cs{pagegoal} shows as its decrease since the block started.
+\fn{defer_para:N} runs while the image is waiting: at the start of each paragraph of the block, and after each displayed equation in it. Its job is to count the full-width lines that still fit on the page.
+
+\emph{The room.} A line fits when its bottom, a strut depth below its baseline, is above the bottom of the page, \cs{pagegoal}. Footnotes that come later in these lines will take room that \cs{pagegoal} does not show yet. The previous run measured it: \gv{short_dim} is the room the footnotes of the block took (see the chunk \texttt{aux}). What they take already is the decrease of \cs{pagegoal} since the block started, \gv{goal_dim} minus \cs{pagegoal}. The difference is still to come, and is subtracted from \cs{pagegoal}.
+
+\emph{The three cases.}
 \begin{itemize}
-\item No line fits: the page must break before the first line of the paragraph. A \cs{vadjust}\texttt{\,pre} with a penalty of $-10\,000$ puts the break there. The image is committed at once to the next page, and all the lines from the first are narrowed, from \cs{topskip} on.
-\item Some lines fit: the shape keeps them at full width, forces the break after the last of them, and narrows the lines that follow, at the top of the next page. The number of that last line is kept in \gv{full_end_int}, and the image is committed only when the paragraph ends past it (\fn{para_after:}); a paragraph that ends before it simply leaves the next one to count again.
-\item The page already broke before this paragraph: the image goes to the current page, and the lines are narrowed from \cs{topskip}.
+\item \emph{Some lines fit.} The shape keeps them at full width, forces the break after the last of them, and narrows the lines that follow, which will be at the top of the next page: their first baseline is \cs{topskip}. \gv{full_end_int} keeps the number of that last full-width line. If the paragraph ends before it, nothing more happens, and the next paragraph counts again. If the paragraph goes past it, the page breaks inside the paragraph: \gv{breakpar_bool} is set for \texttt{para/end}, and \fn{para_after:} will commit the image.
+\item \emph{No line fits.} The page must break before the first line of the paragraph: a \cs{vadjust}\texttt{\,pre} puts a penalty of $-10\,000$ above that line. The image is committed at once, to the next page, and the lines are narrowed from the first one.
+\item \emph{The page has already broken}, between two paragraphs: the image is committed to the page being built, and the lines are narrowed from the first one.
 \end{itemize}
 
 \code{paraend}
 
-\TeX{} adds to the penalty between two lines the club penalty after the first line of a paragraph, the widow penalty before its last, and the broken penalty after a hyphen. Added to the $-10\,000$ that ends the page, they give $-9\,850$ for instance, which no longer forces the break: \TeX{} then breaks a line earlier or later, where it pleases. They are therefore set to zero in the paragraph that ends the page. This must be done at \texttt{para/end}, just before \TeX{} breaks the paragraph into lines: at \texttt{para/begin}, the \cs{everypar} of \LaTeX{} (used by \cs{@afterheading} and \cs{item}) would set \cs{clubpenalty} again afterwards.
+The $-10\,000$ that ends the page must reach the page builder unchanged: a penalty of $-10\,000$ or less forces a break, anything above only suggests one. But \TeX{} adds to the penalty between two lines the club penalty after the first line of a paragraph, the widow penalty before the last one, and the broken penalty after a hyphenated line. With a club penalty of 150, the forced break becomes $-9\,850$, and \TeX{} breaks the page a line earlier or later, as it pleases.
+
+These penalties are therefore cleared in the paragraph that ends the page. This is done at \texttt{para/end}, just before \TeX{} breaks the paragraph into lines. At \texttt{para/begin} it would be too early: the \cs{everypar} of \LaTeX, which runs afterwards (for \cs{@afterheading}, for \cs{item}), sets \cs{clubpenalty} again.
+
+\paragraph{When the page has broken.} This is the branch of \fn{para_after:} for a waiting image (chunk \texttt{paraafter}, above). It acts when the paragraph has more lines than \gv{full_end_int}: the forced break is then inside the paragraph that just ended. The primitive \cs{par} that ended it has run the page builder, which met the $-10\,000$ and ran the output routine: the page is shipped out, and \gv{ship_int} counts it. The image is committed to the page being built, the one that starts with the narrowed lines, and \fn{zone_after:} takes over as for any zone.
+
+One check comes first. If more than one page was shipped since the block started, the page broke twice: a footnote in the full-width lines shortened the page, which broke before the planned line. The image is still drawn on the page with the narrowed lines, but a page with a few lines is left before it. The warning \texttt{early} asks for another run, which will avoid it (chunk \texttt{aux}).
 
 \code{commit}
 
-\fn{commit:n} records a deferred image for the page shipped after \texttt{\#1} pages. The image material and its data (page, left edge and width of the block, \key{width} key, side, structure element) are kept in two token lists numbered by \gv{def_int}, and the number goes into \gv{def_seq}, the list of images waiting for their page. The image is not built here: it will be built as its page is shipped out.
-
-In \fn{para_after:} (above), the image is committed once a paragraph has gone past its last full-width line, that is, once the forced break is behind. The page that breaks there must have been shipped out before \gv{ship_int} is read: the primitive \cs{par} has run the page builder, which met the $-10\,000$ and ran the output routine. When the zone goes on, a \cs{penalty}~10\,000 runs the page builder once more, at no cost, since \fn{zone_after:} adds a \cs{nobreak} there anyway; when the paragraph went past the image, it is not added, since it would forbid a break after the paragraph. The image then goes to the page being built, the one after the break. If more than one page was shipped since the zone started, a footnote in the full-width lines shortened the page, which broke too early; the image is still drawn, on the right page, but a page with a few lines is left before it, and the warning \texttt{early} asks for another run (see \texttt{aux} below).
+\fn{commit:n} records a deferred image for the page that will be shipped out after \texttt{\#1} pages. The material of the image and its data (page, left edge and width of the block, \key{width} key, side, structure element) are kept in two token lists numbered by \gv{def_int}, and the number is added to \gv{def_seq}, the list of the images that wait for their page. The image is not typeset here: it is typeset when its page is shipped out.
 
 \code{placeholder}
 
-In a tagged PDF, the structure tree follows the order of the source, not that of the pages. A deferred image drawn at shipout would otherwise come at the end of its page in the reading order, after the text it goes with. An empty structure element, of type \texttt{NonStruct}, is therefore made where the block starts, and the image will be put in it. Without tagging, \gv{struct_int} stays at zero.
+In a tagged PDF, the structure follows the order in which things are typeset. An image drawn when the page is shipped out would come after everything else on its page, after the text it goes with. An empty structure element, of type \texttt{NonStruct}, is therefore made where the block starts; the image will be attached to it. Without tagging, \gv{struct_int} stays at 0.
 
-\code{msgs}
+\code{topfloats}
 
-The two warnings of the deferred image: \texttt{early} for a page that broke too early, \texttt{alone} for a text that ended before the page broke (\fn{end:}).
+\LaTeX{} adds the floats of the top of a page when the page is finished, in the output routine: \cs{pagetotal} never counts them, and the narrowed lines, which follow the text, come out below them. The deferred image must be drawn below them too. The \texttt{build/column/before} hook runs just before \LaTeX{} puts them in place, and they are still in the list \cs{@toplist}. \fn{top_floats:} adds up their height, the way \LaTeX{} stacks them: each box, \cs{floatsep} between two of them, \cs{textfloatsep} below the last. The natural lengths are used: on a page stretched by \cs{flushbottom}, the image may be off by the stretch of \cs{textfloatsep}, a few points.
 
 \code{overlay}
 
-The deferred images are drawn by the \texttt{shipout/foreground} hook, which runs as each page is shipped, in a \env{picture} whose origin is the top left corner of the page. \fn{overlays:} goes through the images waiting, and \fn{overlay:nnnnnnn} draws those whose page is the one being shipped, that is, those committed after as many pages as have been shipped so far. The images drawn are removed from the list afterwards, not during the loop that goes through it.
-
-The image is put with \cs{put}, at the top of the text area plus \cs{topskip}, minus the height of a strut: at the top of the first line, as for an image that is not deferred. Horizontally, the left margin depends on the side of the page in two-sided documents. In a tagged PDF, the image is wrapped in a marked-content sequence and a \texttt{P} structure element, whose parent is the placeholder made where the block started.
+The deferred images are drawn by the \texttt{shipout/foreground} hook. It runs as each page is shipped out, in a \env{picture} whose origin is the top left corner of the paper.
+\begin{itemize}
+\item \fn{overlays:} goes through the images that wait. The images drawn are removed from the list afterwards, not during the loop that reads it.
+\item \fn{overlay:nnnnnnn} draws an image if its page is the one being shipped: the image was committed for the page shipped after \texttt{\#1} pages, and \gv{ship_int} pages have been shipped.
+\item \emph{Vertically}, the image is put below the top of the text area (1\,in, \cs{voffset}, \cs{topmargin}, \cs{headheight}, \cs{headsep}), below the floats of the top of the page, with its top at the top of the first line: \cs{topskip} minus the height of a strut. This is where an image that is not deferred sits.
+\item \emph{Horizontally}, it starts from the left margin, which depends on the parity of the page in a two-sided document, then from the left edge of the block; on the right, it is flush with the right edge of the block.
+\item \emph{In a tagged PDF}, the image is wrapped in a marked-content sequence and a \texttt{P} structure element, whose parent is the placeholder made where the block started.
+\end{itemize}
 
 \code{aux}
 
-A footnote in the full-width lines takes room at the bottom of the page after the lines were counted. The page then breaks before the planned break, and the image is drawn one page later, after a page with a few lines. This cannot be known when the lines are counted, but it can be seen when the page breaks: the \texttt{build/column/before} hook runs before the output routine builds the column, and \cs{outputpenalty} is then the penalty of the break. A value other than $-10\,000$ while the image waits means that the page broke elsewhere than planned.
+This chunk repairs, on the next run, a page that broke too early because of a footnote.
 
-The room the footnotes in the block took is then the full height of the footnotes on the page (\cs{footins}: its box and its \cs{skip}), minus what the footnotes before the block already took, \cs{vsize} minus \gv{goal_dim}. The register \cs{footins} is an insertion number, so its skip is read with the primitive \cs{skip}, not with \ecs{skip_use:N}. If nothing is found, one line is assumed. The value is kept for the block, by its number, and written to the \texttt{.aux} file at the end of the document, as \verb|\wrapblock@short|\marg{block}\marg{room}; the next run reads it, and counts the lines without that room (\fn{defer_para:N}). A value found in a previous run and not found again is written again: on the next run, with fewer lines on the page, the footnote may go below the break, and the room it took would be lost, so that the runs would alternate.
+\emph{The problem.} A footnote in the full-width lines takes room at the bottom of the page. That room is only known when the footnote is typeset, after the lines were counted. The page then breaks before the planned line, and breaks again at the forced break: a page with a few lines is left before the image.
 
-The \cs{providecommand} written first lets the \texttt{.aux} file be read without the package.
+\emph{Noticing it.} The \texttt{build/column/before} hook runs each time a page is finished, and \cs{outputpenalty} is then the penalty of the break. While an image is waiting, a value other than $-10\,000$ means that the page broke elsewhere than planned.
 
-\subsection{Blocks in boxes}\label{sec:impl-boxes}
+\emph{Measuring the room.} The room the footnotes of the block took is the height of all the footnotes of the page (the box \cs{footins} and the glue above it) minus what the footnotes before the block had taken, \cs{vsize} minus \gv{goal_dim}. If nothing is found, one line is assumed. (\cs{footins} is the number of an insertion: the glue above the footnotes is read with the primitive \cs{skip}, not with \ecs{skip_use:N}.)
+
+\emph{Keeping it.} The room is kept under the number of the block, and written to the \texttt{.aux} file at the end of the document, as \verb|\wrapblock@short|\marg{block}\marg{room}. The next run reads it into \gv{short_dim}, and \fn{defer_para:N} counts the lines without that room.
+
+\emph{Not forgetting it.} On that next run, the page holds fewer lines, and the footnote may now be below the break: no early break is noticed. If the value were dropped then, the run after would break too early again, and the runs would alternate for ever. A value found once is therefore written again as long as no new one replaces it.
+
+The \cs{providecommand} written first lets the \texttt{.aux} file be read by a document that no longer loads the package.
+
+\code{msgs}
+
+The two warnings of the deferred image: \texttt{early} for a page that broke too early (above), \texttt{alone} for a text that ended before the page broke (\fn{end:}).
+
+\subsection{Boxes}\label{sec:impl-boxes}
 
 \code{boxcheck}
 
-The text of a \cs{parbox}, a \env{minipage} or a \texttt{p} cell is set with the width it was given, and the package cannot narrow it. \fn{box_check:} runs at the start of every such box, through \cs{@arrayparboxrestore}. It warns, once per input line, when the box is wider than the room left beside the image, while the zone runs beside it. It stays silent before the image is placed, while a deferred image waits, below the image, and in a footnote, whose text is set in an insertion (group type~11) and goes to the foot of the page.
+The text of a \cs{parbox}, a \env{minipage} or a \texttt{p} cell is typeset with the width it was given: the package cannot narrow it. \fn{box_check:} runs at the start of every such box, through \cs{@arrayparboxrestore}, where \cs{hsize} is already the width of the box. It warns when the box is wider than the room left beside the image, once per block: the input line it compares is that of the end of the block, the same for all its boxes. It stays silent when the box cannot be beside the image:
+\begin{itemize}
+\item before the image is placed, and while a deferred image waits;
+\item below the image (\cs{pagetotal} is past \gv{bottom_dim});
+\item in a footnote, whose text is typeset in an insertion (group type~11) and goes to the foot of the page;
+\item in a float (\cs{@captype} is defined there), which goes elsewhere on the page.
+\end{itemize}
 
 \code{inbox}
 
-In a box, \cs{pagetotal} says nothing of the position, and no page can break anyway. The block is then made of two boxes side by side: the text in a \env{minipage} as wide as the line minus the room of the image, and the image, aligned on the first line of the text. An information message in the \texttt{.log} says so.
+A block that is itself in a box cannot use any of the above: in a box, \cs{pagetotal} says nothing of the position, and no page can break anyway. The block is then made of two boxes side by side: the text in a \env{minipage} as wide as the line minus \gv{shift_dim}, and the image, lowered so that its top is at the top of the first line. The text does not run below the image. An information message in the \texttt{.log} says so.
 
 \end{document}

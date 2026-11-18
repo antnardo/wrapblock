@@ -41,6 +41,8 @@ for engine in pdflatex lualatex; do
   compile limits-$engine-plainimg-tag '\def\TAGGING{}\def\PLAINIMG{}' limits 2
   compile contexts-$engine "" contexts 2
   compile contexts-$engine-twocol '\def\TWOCOL{}' contexts 2
+  # floats, marginal notes and centred text in a block
+  compile floats-$engine "" floats 2
   # images near the bottom of a page: a heading never left alone
   for mode in plain tag; do
     tag=""; [[ $mode == tag ]] && tag='\def\TAGGING{}'

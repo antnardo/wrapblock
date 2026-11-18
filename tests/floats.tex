@@ -1,0 +1,60 @@
+% Floats, marginal notes and centred text in a block.
+%  F1. A float at the top of the page that receives a deferred image: the
+%      image is drawn below the float.
+%  F2. A float and a \marginpar in the text of a block near the bottom of a
+%      page, where the text is measured in a box: no error, nothing lost.
+%  F3. Centred and ragged-left text: the image stays at the edge of the block.
+% One image per page: collisions.py finds an image by its three marks.
+% run.zsh checks that there is no error and that no word overlaps an image.
+\documentclass{article}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}\usepackage{lmodern}
+\fi
+\usepackage{graphicx,kantlipsum}
+\usepackage{wrapblock}
+\newcommand\img[2]{\fbox{\parbox[t][#2][s]{#1}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+\begin{document}
+% F1
+\kant[1-3]
+
+\kant[4][1-1]
+\begin{figure}[t]\centering\rule{8cm}{5cm}\caption{A float that goes to the top of the next page}\end{figure}
+\section{F1}
+\begin{wrapblock}{\img{4cm}{8cm}}
+\kant[5-7]
+\end{wrapblock}
+After the block.
+% F2
+\clearpage
+\kant[1-3]
+
+\kant[4][1-1]
+\section{F2}
+\begin{wrapblock}{\img{4cm}{8cm}}
+\kant[1]
+\begin{figure}[t]\centering\rule{4cm}{2cm}\caption{A float declared in the block}\end{figure}
+\kant[2] Some text\marginpar{a note} goes on. \kant[3]
+\end{wrapblock}
+After the block.
+% F3
+\clearpage
+\section{F3}
+\begin{wrapblock}{\img{3cm}{2cm}}
+\centering \kant[1][1-4]
+\end{wrapblock}
+\clearpage
+\begin{center}
+\begin{wrapblock}[l]{\img{3cm}{2cm}}
+\kant[1][1-4]
+\end{wrapblock}
+\end{center}
+\clearpage
+\begin{wrapblock}[l]{\img{3cm}{2cm}}
+\raggedleft \kant[1][1-4]
+\end{wrapblock}
+\clearpage
+\begin{wrapblock}{\img{3cm}{2cm}}
+\raggedright \kant[1][1-4]
+\end{wrapblock}
+\end{document}

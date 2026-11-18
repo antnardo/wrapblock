@@ -74,6 +74,10 @@
 \tl_new:N   \g__wrapblock_counters_tl
 \box_new:N  \l__wrapblock_measure_box
 \box_new:N  \l__wrapblock_labels_box
+\box_new:N  \g__wrapblock_float_box     % a float of the text, while it is measured
+\box_new:N  \g__wrapblock_mar_box       % a \marginpar, likewise
+\tl_new:N   \l__wrapblock_freelist_tl   % the lists of float boxes of LaTeX,
+\tl_new:N   \l__wrapblock_currlist_tl   % kept while the text is measured
 \dim_new:N  \g__wrapblock_text_dim      % height of the text at full width
 \int_new:N  \g__wrapblock_block_int     % blocks so far, to name them in the .aux
 \dim_new:N  \g__wrapblock_goal_dim      % \pagegoal where a deferred block starts
@@ -84,6 +88,7 @@
 \bool_new:N \l__wrapblock_allow_defer_bool
 \bool_new:N \g__wrapblock_breakpar_bool  % this paragraph ends the page
 \seq_new:N \l__wrapblock_done_seq
+\dim_new:N  \g__wrapblock_top_dim       % height of the floats at the top of the page
 % </statedefer>
 
 % <shipcount>
@@ -102,6 +107,7 @@
   { \prop_gput:Nnn \g__wrapblock_short_prop {#1} {#2} }
 \hook_gput_code:nnn { build / column / before } { wrapblock }
   {
+    \__wrapblock_top_floats:
     \bool_lazy_and:nnT
       { \g__wrapblock_wait_bool }
       { \int_compare_p:nNn { \tex_outputpenalty:D } > { -10000 } }
@@ -131,6 +137,28 @@
       { \iow_now:Nn \@auxout { \wrapblock@short {#1} {#2} } }
   }
 % </aux>
+
+% <topfloats>
+% The floats LaTeX is about to put at the top of the page take room above
+% the text: a deferred image is drawn below them. Their height is that of
+% the boxes in \@toplist, \floatsep between them and \textfloatsep below.
+\cs_new_protected:Npn \__wrapblock_top_floats:
+  {
+    \dim_gzero:N \g__wrapblock_top_dim
+    \tl_if_empty:NF \@toplist
+      {
+        \group_begin:
+          \cs_set:Npn \@elt ##1
+            {
+              \dim_gadd:Nn \g__wrapblock_top_dim
+                { \box_ht:N ##1 + \box_dp:N ##1 + \floatsep }
+            }
+          \@toplist
+        \group_end:
+        \dim_gadd:Nn \g__wrapblock_top_dim { \textfloatsep - \floatsep }
+      }
+  }
+% </topfloats>
 
 % <overlay>
 % Deferred images are set on the page they belong to as it is shipped,
@@ -183,6 +211,7 @@
             \dim_eval:n
               {
                 - 1in - \voffset - \topmargin - \headheight - \headsep
+                - \g__wrapblock_top_dim
                 - \topskip + \box_ht:N \strutbox - \box_ht:N \l_tmpa_box
               }
           )
@@ -220,6 +249,8 @@
 
 % <baseline>
 % ---------------------------------------------------------------- helpers
+% The messages give the line where the block ends: its text is read as an
+% argument, and TeX is on the line of \end{wrapblock} when the code runs.
 % Baseline of the first line of the paragraph being started.
 \cs_new_protected:Npn \__wrapblock_first_baseline:N #1
   {
@@ -248,7 +279,7 @@
       }
   }
 \msg_new:nnn { wrapblock } { moved }
-  { The~block~on~input~line~\msg_line_number:\ moved~to~a~new~page~
+  { The~block~that~ends~on~input~line~\msg_line_number:\ moved~to~a~new~page~
     while~its~text~was~set.~Its~wrapping~may~be~off~by~some~lines. }
 \msg_new:nnn { wrapblock } { nested }
   { wrapblock~blocks~cannot~be~nested. }
@@ -414,7 +445,18 @@
     \box_set_wd:Nn \l_tmpa_box { 0pt }
     \box_set_ht:Nn \l_tmpa_box { 0pt }
     \box_set_dp:Nn \l_tmpa_box { 0pt }
-    \box_use_drop:N \l_tmpa_box
+    % Centred or ragged-left text: \leftskip comes before the image and
+    % would move it. The opposite glue takes it back to the start of the
+    % line, and the same glue after it puts the text where it was.
+    \skip_if_eq:nnTF { \leftskip } { 0pt }
+      { \box_use_drop:N \l_tmpa_box }
+      {
+        \tex_penalty:D 10000 ~
+        \skip_horizontal:n { - \leftskip }
+        \box_use_drop:N \l_tmpa_box
+        \tex_penalty:D 10000 ~
+        \skip_horizontal:N \leftskip
+      }
     \bool_gset_false:N \g__wrapblock_pending_bool
   }
 % </build>
@@ -447,12 +489,14 @@
   {
     \bool_lazy_and:nnT { \l__wrapblock_outer_bool } { \g__wrapblock_active_bool }
       {
-        % group 11: a footnote, set apart at the foot of the page
+        % group 11: a footnote, set apart at the foot of the page;
+        % \@captype: a float, which goes elsewhere on the page
         \bool_lazy_all:nT
           {
             { ! \g__wrapblock_pending_bool }
             { ! \g__wrapblock_wait_bool }
             { \int_compare_p:n { \tex_currentgrouptype:D != 11 } }
+            { ! \cs_if_exist_p:N \@captype }
             { \dim_compare_p:nNn { \pagetotal } < { \g__wrapblock_bottom_dim } }
           }
           {
@@ -468,8 +512,9 @@
       }
   }
 \msg_new:nnn { wrapblock } { box }
-  { A~box~of~width~#1~on~input~line~\msg_line_number:\ sits~beside~the~
-    image,~where~only~#2~is~left.~The~text~of~a~box~is~not~wrapped. }
+  { A~box~of~width~#1,~in~the~block~that~ends~on~input~line~
+    \msg_line_number:,~sits~beside~the~image,~where~only~#2~is~left.~
+    The~text~of~a~box~is~not~wrapped. }
 % </boxcheck>
 
 % <parahooks>
@@ -702,12 +747,11 @@
       {
         \int_compare:nNnT { \tex_prevgraf:D } > { \g__wrapblock_full_end_int }
           {
-            % A penalty runs the page builder, and the output routine, if
-            % the page is not shipped yet; the image goes to the page being
-            % built. It may come later than planned: a footnote in the
-            % full-width lines shortens the page, which then breaks twice.
-            \int_compare:nNnF { \tex_prevgraf:D } > { \g__wrapblock_narrowed_int }
-              { \tex_penalty:D 10000 ~ }
+            % The \par that ended the paragraph ran the page builder, which
+            % met the forced break: the page is shipped, and the image goes
+            % to the page being built. It may come later than planned: a
+            % footnote in the full-width lines shortens the page, which then
+            % breaks twice.
             \int_compare:nNnT
               { \g__wrapblock_ship_int } > { \g__wrapblock_origin_ship_int + 1 }
               { \msg_warning:nn { wrapblock } { early } }
@@ -760,7 +804,7 @@
     \par
   }
 \msg_new:nnn { wrapblock } { inbox }
-  { The~block~on~input~line~\msg_line_number:\ is~inside~a~box:~its~text~
+  { The~block~that~ends~on~input~line~\msg_line_number:\ is~inside~a~box:~its~text~
     is~set~beside~the~image,~without~wrapping~under~it. }
 % </inbox>
 
@@ -836,7 +880,7 @@
       }
   }
 \msg_new:nnn { wrapblock } { short }
-  { The~image~of~the~block~on~input~line~\msg_line_number:\ does~not~fit~
+  { The~image~of~the~block~that~ends~on~input~line~\msg_line_number:\ does~not~fit~
     at~the~bottom~of~the~page,~and~its~text~is~too~short~to~run~on~to~
     the~next~page:~the~whole~block~moves~to~the~next~page,~and~leaves~
     room~at~the~bottom~of~this~one. }
@@ -865,11 +909,21 @@
         \tl_gput_right:Ne \g__wrapblock_counters_tl
           { \legacy_if:nTF {##1} { \exp_not:c { ##1true } } { \exp_not:c { ##1false } } }
       }
+    \tl_set_eq:NN \l__wrapblock_freelist_tl \@freelist
+    \tl_set_eq:NN \l__wrapblock_currlist_tl \@currlist
     \group_begin:
       \cs_if_exist_use:NT \tag_suspend:n { { wrapblock } }
       \vbox_set:Nn \l__wrapblock_measure_box
         {
           \bool_set_false:N \l__wrapblock_outer_bool
+          % A float or a \marginpar cannot leave a box. Between two
+          % paragraphs, LaTeX sees the box and gives an error: here they are
+          % set in boxes of the package, without the error. Inside a
+          % paragraph, LaTeX does not see it and takes a float box: the
+          % lists of float boxes are put back after the measure.
+          \cs_set_eq:NN \@parmoderr \prg_do_nothing:
+          \cs_set_eq:NN \@currbox \g__wrapblock_float_box
+          \cs_set_eq:NN \@marbox  \g__wrapblock_mar_box
           \dim_set_eq:NN \hsize \linewidth
           \dim_zero:N \@totalleftmargin
           \tex_parshape:D 0 ~
@@ -885,6 +939,8 @@
     \group_end:
     \tl_use:N \g__wrapblock_counters_tl
     \hbox_gset:Nn \@labels { \box_use:N \l__wrapblock_labels_box }
+    \tl_gset_eq:NN \@freelist \l__wrapblock_freelist_tl
+    \tl_gset_eq:NN \@currlist \l__wrapblock_currlist_tl
   }
 % </measure>
 
@@ -907,12 +963,12 @@
 % </placeholder>
 % <msgs>
 \msg_new:nnn { wrapblock } { early }
-  { The~page~broke~too~early~in~the~text~of~the~block~on~input~line~
-    \msg_line_number:,~before~its~image~was~set:~a~footnote~in~the~
+  { The~page~broke~too~early~in~the~text~of~the~block~that~ends~on~
+    input~line~\msg_line_number:,~before~its~image~was~set:~a~footnote~in~the~
     full-width~lines~shortened~the~page,~and~a~page~with~a~few~lines~is~
     left~before~the~image.~Rerun~LaTeX~to~get~it~right. }
 \msg_new:nnn { wrapblock } { alone }
-  { The~text~of~the~block~on~input~line~\msg_line_number:\ ended~before~
+  { The~text~of~the~block~that~ends~on~input~line~\msg_line_number:\ ended~before~
     the~bottom~of~the~page:~its~image~is~set~after~it. }
 % </msgs>
 
