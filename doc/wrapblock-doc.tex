@@ -48,7 +48,7 @@
 \title{\pkg{wrapblock}\\[0.4em]
   \large An image beside its own text, which wraps around it and runs below}
 \author{Antonin Marchand}
-\date{Version 0.1.4 --- 19 November 2026}
+\date{Version 0.1.5 --- 25 November 2026}
 
 \begin{document}
 \maketitle
@@ -164,7 +164,7 @@ The text of the block is read as an argument before it is typeset, so that it ca
 \subsection{The environment}
 
 \begin{docEnvironment}{wrapblock}{\oarg{keys}\marg{image}}
-  Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The package does not scale it: the image has the size it is given, with the \key{width} or \key{height} of \cs{includegraphics} for instance, and the text is narrowed by that width, over that height. The \key{width} key below can only reserve a wider room, in which the image is centred. The environment starts a new paragraph, and so does the text after it.
+  Sets \meta{image} beside the contents of the environment. \meta{image} is any material in horizontal mode: an \cs{includegraphics}, an \cs{includestandalone}, a \env{tikzpicture}, a \env{tabular}. Its top is aligned with the top of the first line of the block. The package does not scale it: the image has the size it is given, with the \key{width} or \key{height} of \cs{includegraphics} for instance, and the text is narrowed by that width, over that height. The \key{width} key below can only reserve a wider room, in which the image is centred; the image is then typeset as a \env{minipage} of that width, and may hold a caption. The environment starts a new paragraph, and so does the text after it.
 
   The contents are read as an argument, before they are typeset: they cannot hold verbatim material (\cs{verb}, \env{verbatim}); see section~\ref{sec:know}.
 \end{docEnvironment}
@@ -198,7 +198,7 @@ Key & Default & Meaning \\
 \end{docKey}
 
 \begin{docKey}[wrapblock]{width}{=\texttt{natural}\textbar\meta{length}}{default \texttt{natural}}
-  The width reserved for the image. With \texttt{natural}, it is the width of the image itself. With a \meta{length}, the image is centred in a room of that width: this aligns several blocks whose images differ in width. The length is taken as it is: a room narrower than the image lets the image stick out on both sides, and \texttt{0pt} is a room of no width.
+  The width reserved for the image. With \texttt{natural}, it is the width of the image itself. With a \meta{length}, the image is typeset as a \env{minipage} of that width, centred: this aligns several blocks whose images differ in width, and lets the image hold paragraphs or a caption below it (\cs{captionof}). The length is taken as it is: a room narrower than the image lets the image stick out on the right, with an \texttt{Overfull \textbackslash hbox} from \TeX{}.
 \end{docKey}
 
 \begin{docKey}[wrapblock]{hsep}{=\meta{length}}{default \texttt{1em}}
@@ -225,14 +225,15 @@ The image is typeset the way \cs{mbox} typesets its contents: on one line, witho
 Given as the image & What happens \\
 \midrule
 \cs{includegraphics}, \env{tikzpicture}, \env{tabular} & as expected \\
-\env{minipage}, \cs{parbox} & as expected; this is the way to give paragraphs, a list, a displayed equation or a caption (\cs{captionof}) as the image \\
+\env{minipage}, \cs{parbox} & as expected; this is the way to give paragraphs, a list or a displayed equation as the image \\
+a caption (\cs{captionof}) & as expected with the \key{width} key, which makes the image a \env{minipage}; without it, the errors of a caption in an \cs{mbox} (``You can't use \textbackslash hrule here'') \\
 \env{tcolorbox} & as expected; a \texttt{breakable} one does not break: near the bottom of a page it is deferred or moved as a whole, like any image \\
 a few words & set on one line beside the text \\
 nothing & the text is narrowed by \key{hsep} on its first line only \\
 a long text, without \cs{parbox} & one very long line: see ``too wide'' below \\
 a list or a displayed equation, without \env{minipage} & errors of \LaTeX{} (``Not allowed in LR mode'', ``Bad math environment delimiter''): they need a \env{minipage} \\
 \cs{verb}, \env{verbatim} & errors: the image is read as an argument. Typeset the verbatim material beforehand in a box, and give \cs{usebox} as the image (section~\ref{sec:know}) \\
-a \env{figure}, a \cs{marginpar} & the error ``Not in outer par mode'': a float cannot be the image; for a caption, use \cs{captionof} in a \env{minipage} \\
+a \env{figure}, a \cs{marginpar} & the error ``Not in outer par mode'': a float cannot be the image; for a caption, use \cs{captionof} with the \key{width} key \\
 a footnote in a box (\cs{fbox}, \env{tabular}) & its text is lost, as in any box: use \cs{footnotemark} in the image and \cs{footnotetext} in the text. In a \env{minipage}, the footnote is set at the foot of the \env{minipage} \\
 another \env{wrapblock} & the error ``blocks cannot be nested'' \\
 \bottomrule
@@ -323,6 +324,8 @@ A footnote called in the block goes to the foot of the page, as anywhere else. A
 \subsection{Boxes and wide material}
 
 The text of a box --- \cs{parbox}, \env{minipage}, \texttt{p} column of a table --- keeps the width it was given and is not wrapped. A box wider than the room left beside the image therefore overlaps the image; the package says so with a warning. A box set below the image raises no problem.
+
+A \env{tcolorbox} is the exception: one that starts beside the image, between two paragraphs, takes the width left there, breakable or not, as it would in a list. Its text is not wrapped either: a box that starts beside the image and ends below it keeps that width. A box that opens the block is beside the image, but its line is taller than a line of text, and the image, aligned on the baseline of that line, comes down by as much: open the block with a line of text.
 
 Other material that cannot be broken --- a wide \env{tabular} without \texttt{p} column, a wide picture, a long formula --- also overlaps the image when it is wider than the room left beside it. The package does not warn about it, but \TeX{} does, with its usual \texttt{Overfull \textbackslash hbox}.
 
@@ -449,6 +452,12 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   The documentation says what the image may be (section~\ref{sec:image}).
 \item[0.1.3 (18 November 2026)] No change in the code. The README says where to report a bug, and the documentation reads the code of the package wherever \TeX{} finds it, so that it compiles from one folder.
 \item[0.1.4 (19 November 2026)] Loading the package no longer slows down a document: the foreground of a page is asked for only when a deferred image waits for it. A document without any block compiled 20\,\% slower with pdf\LaTeX{} and 40\,\% slower with Lua\LaTeX{}; it now takes the same time as without the package.
+\item[0.1.5 (25 November 2026)] Corrections:
+  \begin{itemize}
+  \item a paragraph that starts inside a group, such as \verb|{\bfseries Bold} text| or a breakable \env{tcolorbox}, lost its shape when the group ended, and ran over the image;
+  \item a \env{tcolorbox} between two paragraphs, beside the image, was as wide as the line and overlapped the image: it now takes the width left beside the image;
+  \item with the \key{width} key, the image is a \env{minipage} of that width: it may hold a caption (\cs{captionof}), which gave errors.
+  \end{itemize}
 \end{description}
 
 % =========================================================================
@@ -551,7 +560,7 @@ The variables of a block are global, because a block runs over several paragraph
 \begin{itemize}
 \item \emph{the image}: the material given (\gv{img_tl}), the box built from it (\gv{img_box}), its \key{width} key, its height plus \key{vsep} (\gv{height_dim}), and the width it takes from the lines, \key{hsep} included (\gv{shift_dim});
 \item \emph{the block}: its left edge and its width (\gv{left_dim}, \gv{width_dim}), the side of the image, and the bottom of the image area (\gv{bottom_dim});
-\item \emph{the zone}: running or not (\gv{active_bool}), image placed or not yet (\gv{pending_bool}), the number of lines narrowed in the current paragraph (\gv{narrowed_int}), the line width left beside the image (\gv{avail_dim}), and the shapes set so far (\gv{shapes_seq}, see \fn{unstale:});
+\item \emph{the zone}: running or not (\gv{active_bool}), image placed or not yet (\gv{pending_bool}), the number of lines narrowed in the current paragraph (\gv{narrowed_int}), the line width left beside the image (\gv{avail_dim}), the shapes set so far (\gv{shapes_seq}, see \fn{unstale:}), and the shape of the narrowed paragraph being typeset (\gv{parshape_tl}, \gv{pen_tl}, \gv{inpar_bool}, see \fn{reshape:});
 \item \emph{the pages}: the number of pages shipped out so far (\gv{ship_int}), and its value where the zone started (\gv{origin_ship_int}); when the two differ, the zone has moved to another page;
 \item \emph{the penalties the block changes}, saved to be put back: \cs{predisplaypenalty}, \cs{postdisplaypenalty}, \cs{@itempenalty}, \cs{@beginparpenalty}, \cs{@endparpenalty}.
 \end{itemize}
@@ -724,11 +733,17 @@ For instance, in the usual case (\texttt{\#2} and \texttt{\#3} are 0), a paragra
 
 \TeX{} clears \cs{parshape} at the end of every paragraph, but only locally. Suppose a paragraph ends inside a deeper group than the one it started in: an item whose text opens a nested list, for instance. When that group ends, the narrowed shape comes back, and the next paragraph of the outer level would be narrowed a second time. \fn{unstale:} recognises such a leftover at the start of a paragraph of the block: a \cs{parshape} of more than one line whose signature is among those the block has set. It keeps only its last entry, which is the shape \LaTeX{} had given.
 
+\code{reshape}
+
+The opposite case: a paragraph that starts inside a group that ends before the paragraph does. \verb|{\bfseries Bold} text| at the start of a paragraph is one; a breakable \env{tcolorbox}, which starts the paragraph of each of its parts in a group, is another. The shape set by \texttt{para/begin} is local to that group, and is gone when the group ends, before the paragraph is broken into lines. \fn{shape:Nnnn} keeps the two assignments it made in \gv{parshape_tl} and \gv{pen_tl}, and, inside a group, asks \cs{aftergroup} for \fn{reshape:}. That function sets the shape again if the same narrowed paragraph is still being typeset (\gv{inpar_bool}, cleared by \texttt{para/after}), in outer horizontal mode, and asks again for the group around, if any. When the paragraph ends inside the group, as usual, \fn{reshape:} comes in vertical mode and does nothing.
+
 \subsection{Setting the image}
 
 \code{build}
 
-\fn{build:} typesets the image in \gv{img_box}, centred in the width of the \key{width} key when one is given. It is called twice: by the environment, to measure the image, and by \fn{place_image:}, inside the first paragraph. \lv{inimage_bool} is set inside the box: a \env{wrapblock} met there is an error. The second call is not a waste: in a tagged PDF, an \cs{fbox}, a \env{tabular} or a \cs{parbox} built outside a paragraph would open its structure elements at the wrong place.
+\fn{image:nn} typesets the image \texttt{\#2} as it is, or, when the \key{width} key \texttt{\#1} gives a length, in a \env{minipage} of that width, centred. The \env{minipage} admits paragraphs and a caption, which an \cs{hbox} refuses; aligned on its bottom line (\texttt{[b]}), a single image keeps the height and depth it has on its own. \lv{outer_bool} is off in the image, which is not the text of the block: a box inside it is not checked. The deferred image of chunk \texttt{overlay} is built by the same function.
+
+\fn{build:} typesets the image in \gv{img_box}. It is called twice: by the environment, to measure the image, and by \fn{place_image:}, inside the first paragraph. \lv{inimage_bool} is set inside the box: a \env{wrapblock} met there is an error. The second call is not a waste: in a tagged PDF, an \cs{fbox}, a \env{tabular} or a \cs{parbox} built outside a paragraph would open its structure elements at the wrong place.
 
 \fn{place_image:} puts the image at the start of the first line of the block:
 \begin{itemize}
@@ -879,6 +894,10 @@ The text of a \cs{parbox}, a \env{minipage} or a \texttt{p} cell is typeset with
 \item in a footnote, whose text is typeset in an insertion (group type~11) and goes to the foot of the page;
 \item in a float (\cs{@captype} is defined there), which goes elsewhere on the page.
 \end{itemize}
+
+\code{boxwidth}
+
+A \env{tcolorbox} computes its width from \cs{linewidth} when it starts, between two paragraphs, before it starts the line it sits on: \cs{linewidth} is then the full line, and the box would overlap the image even on a narrowed line. \fn{box_width:} runs before \cs{tcolorbox}, through the hook \texttt{cmd/tcolorbox/before}, inside the group of the box. When the box starts beside the image --- the image is still to be placed, or \cs{pagetotal} has not reached \gv{bottom_dim} --- \cs{linewidth} becomes the width of the narrowed line, computed as in \fn{shape:Nnnn}. The line of the box is then narrowed like any other, and the box fits on it. Other boxes need no such help: a \env{minipage} or a \cs{parbox} is given its width by the author.
 
 \code{inbox}
 

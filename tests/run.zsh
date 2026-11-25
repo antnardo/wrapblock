@@ -1,6 +1,7 @@
 #!/bin/zsh
 # Runs every test with pdfLaTeX and LuaLaTeX, plain and tagged:
-# limits.tex (article and book), extra.tex, contexts.tex (and twocolumn).
+# limits.tex (article and book), extra.tex, contexts.tex (and twocolumn),
+# floats.tex, images.tex, groups.tex, items.tex, heading.tex.
 # Prints errors, `moved` warnings, overlaps and tagpdf structure warnings.
 # First checks that the documentation prints the whole package (chunks.py).
 # Needs pdflatex, lualatex, python3 and pdftotext (poppler) in the PATH.
@@ -45,6 +46,9 @@ for engine in pdflatex lualatex; do
   compile floats-$engine "" floats 2
   # unusual images: a tcolorbox, text, nothing, too wide, too tall
   compile images-$engine "" images 2
+  # a paragraph that starts in a group, a tcolorbox beside the image,
+  # a caption in an image with a width
+  compile groups-$engine "" groups 2
   # items in a block, the list opened before it and closed after it
   compile items-$engine "" items 2
   printf "%-26s " ""; python3 items.py items-$engine.pdf | head -1

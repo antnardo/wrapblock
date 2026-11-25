@@ -14,7 +14,7 @@
 %% The Current Maintainer of this work is Antonin Marchand.
 % <ident>
 \NeedsTeXFormat{LaTeX2e}[2023-06-01]
-\ProvidesExplPackage{wrapblock}{2026-11-19}{0.1.4}
+\ProvidesExplPackage{wrapblock}{2026-11-25}{0.1.5}
   {Closed block with an image beside its text}
 % </ident>
 
@@ -53,6 +53,9 @@
 \dim_new:N  \l__wrapblock_l_dim
 \dim_new:N  \l__wrapblock_ni_dim
 \dim_new:N  \l__wrapblock_nl_dim
+\tl_new:N   \g__wrapblock_parshape_tl  % the shape of the paragraph being set,
+\tl_new:N   \g__wrapblock_pen_tl       % and its penalties
+\bool_new:N \g__wrapblock_inpar_bool   % a narrowed paragraph is being set
 \dim_new:N  \g__wrapblock_avail_dim     % line width left beside the image
 \tl_new:N   \g__wrapblock_warned_tl     % input line of the last box warning
 \seq_new:N  \g__wrapblock_shapes_seq    % signatures of the shapes set
@@ -201,9 +204,7 @@
         \hbox_set:Nn \l_tmpa_box
           {
             \cs_if_exist_use:NT \tag_mc_begin:n { { } }
-            \dim_compare:nNnTF {#4} = { - \c_max_dim }
-              { \tl_use:c { g__wrapblock_def_ #7 _tl } }
-              { \hbox_to_wd:nn {#4} { \hfil \tl_use:c { g__wrapblock_def_ #7 _tl } \hfil } }
+            \__wrapblock_image:nv {#4} { g__wrapblock_def_ #7 _tl }
             \cs_if_exist_use:N \tag_mc_end:
           }
         \put
@@ -414,17 +415,71 @@
               { \dim_use:N \l__wrapblock_ni_dim / \dim_use:N \l__wrapblock_nl_dim }
           }
       }
-    #1 \tex_parshape:D
-      \int_eval:n { \l__wrapblock_lines_int + 1 } \c_space_tl
-      \l__wrapblock_shape_tl
-      \dim_use:N \l__wrapblock_i_dim \c_space_tl \dim_use:N \l__wrapblock_l_dim \scan_stop:
-    #1 \tex_interlinepenalties:D
-      \int_eval:n { \l__wrapblock_lines_int + 1 } \c_space_tl
-      \l__wrapblock_pen_tl \int_use:N \interlinepenalty \scan_stop:
+    \tl_gset:Ne \g__wrapblock_parshape_tl
+      {
+        \exp_not:N \tex_parshape:D
+          \int_eval:n { \l__wrapblock_lines_int + 1 } \c_space_tl
+          \l__wrapblock_shape_tl
+          \dim_use:N \l__wrapblock_i_dim \c_space_tl \dim_use:N \l__wrapblock_l_dim
+          \exp_not:N \scan_stop:
+      }
+    \tl_gset:Ne \g__wrapblock_pen_tl
+      {
+        \exp_not:N \tex_interlinepenalties:D
+          \int_eval:n { \l__wrapblock_lines_int + 1 } \c_space_tl
+          \l__wrapblock_pen_tl \int_use:N \interlinepenalty
+          \exp_not:N \scan_stop:
+      }
+    #1 \g__wrapblock_parshape_tl
+    #1 \g__wrapblock_pen_tl
+    \int_compare:nNnT { \l__wrapblock_lines_int } > { 0 }
+      {
+        \bool_gset_true:N \g__wrapblock_inpar_bool
+        \__wrapblock_reshape_after_group:
+      }
   }
 % </shape>
 
+% <reshape>
+% \parshape is local. A paragraph that starts inside a group and goes on
+% after it ({\bfseries Bold} text, a breakable tcolorbox) would lose
+% its shape when the group ends, and run over the image. The shape is set
+% again after every group that ends while the paragraph goes on.
+\cs_new_protected:Npn \__wrapblock_reshape_after_group:
+  {
+    \int_compare:nNnT { \tex_currentgrouplevel:D } > { 0 }
+      { \group_insert_after:N \__wrapblock_reshape: }
+  }
+\cs_new_protected:Npn \__wrapblock_reshape:
+  {
+    \bool_lazy_all:nT
+      {
+        { \g__wrapblock_inpar_bool }
+        { \mode_if_horizontal_p: }
+        { ! \mode_if_inner_p: }
+      }
+      {
+        \g__wrapblock_parshape_tl
+        \g__wrapblock_pen_tl
+        \__wrapblock_reshape_after_group:
+      }
+  }
+% </reshape>
+
 % <build>
+% The image #2, in horizontal mode, with the width key #1. With a length,
+% it is a minipage of that width, centred: it may hold paragraphs and a
+% caption. Its bottom line is on the baseline, as that of a lone image.
+% The image is not the text of the block: its boxes are not checked.
+\cs_new_protected:Npn \__wrapblock_image:nn #1#2
+  {
+    \bool_set_true:N \l__wrapblock_inimage_bool
+    \bool_set_false:N \l__wrapblock_outer_bool
+    \dim_compare:nNnTF {#1} = { - \c_max_dim }
+      {#2}
+      { \begin{minipage}[b]{#1} \centering #2 \end{minipage} }
+  }
+\cs_generate_variant:Nn \__wrapblock_image:nn { nv }
 % The image is built twice: once to be measured at the start of the
 % block, once where it is placed. Built outside a paragraph, a box with
 % text in it (\fbox, tabular, \parbox) would open its structure at the
@@ -432,15 +487,7 @@
 \cs_new_protected:Npn \__wrapblock_build:
   {
     \hbox_gset:Nn \g__wrapblock_img_box
-      {
-        \bool_set_true:N \l__wrapblock_inimage_bool
-        \dim_compare:nNnTF { \g__wrapblock_img_width_dim } = { - \c_max_dim }
-          { \tl_use:N \g__wrapblock_img_tl }
-          {
-            \hbox_to_wd:nn { \g__wrapblock_img_width_dim }
-              { \hfil \tl_use:N \g__wrapblock_img_tl \hfil }
-          }
-      }
+      { \__wrapblock_image:nv { \g__wrapblock_img_width_dim } { g__wrapblock_img_tl } }
   }
 
 % The image, flat (no width, height or depth), at the start of line 1.
@@ -745,8 +792,11 @@
 % <paraafter>
 \hook_gput_code:nnn { para / after } { wrapblock }
   {
-    \bool_if:NT \g__wrapblock_active_bool
-      { \bool_if:NT \l__wrapblock_outer_bool { \__wrapblock_para_after: } }
+    \bool_if:NT \l__wrapblock_outer_bool
+      {
+        \bool_gset_false:N \g__wrapblock_inpar_bool
+        \bool_if:NT \g__wrapblock_active_bool { \__wrapblock_para_after: }
+      }
   }
 \cs_new_protected:Npn \__wrapblock_para_after:
   {
@@ -794,6 +844,40 @@
       }
   }
 % </paraafter>
+
+% <boxwidth>
+% A tcolorbox reads \linewidth for its width before it starts its line,
+% between two paragraphs, where \linewidth is the full line. One that
+% starts beside the image is given the width left there, which its line
+% gets. The width is set in the group of the box, and ends with it.
+\cs_new_protected:Npn \__wrapblock_box_width:
+  {
+    \bool_lazy_all:nT
+      {
+        { \l__wrapblock_outer_bool }
+        { \g__wrapblock_active_bool }
+        { ! \g__wrapblock_wait_bool }
+        {
+          \bool_lazy_or_p:nn { \g__wrapblock_pending_bool }
+            { \dim_compare_p:nNn { \pagetotal } < { \g__wrapblock_bottom_dim } }
+        }
+      }
+      {
+        \str_if_eq:VnTF \g__wrapblock_side_tl { l }
+          { \dim_sub:Nn \linewidth { \g__wrapblock_shift_dim } }
+          {
+            \dim_set:Nn \linewidth
+              {
+                \dim_min:nn { \linewidth }
+                  { \g__wrapblock_left_dim + \g__wrapblock_width_dim
+                    - \g__wrapblock_shift_dim - \@totalleftmargin }
+              }
+          }
+      }
+  }
+\hook_gput_code:nnn { cmd / tcolorbox / before } { wrapblock }
+  { \__wrapblock_box_width: }
+% </boxwidth>
 
 % <inbox>
 % In a box (minipage, \parbox, tcolorbox) \pagetotal says nothing of the

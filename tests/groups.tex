@@ -1,0 +1,80 @@
+% Groups and boxes in the text of a block, and a caption in the image.
+%  G1. a paragraph that starts inside a group ({\bfseries ...} text):
+%      its shape is set again when the group ends, image on either side;
+%  G2. a tcolorbox between two paragraphs, beside the image: it takes the
+%      width left there, breakable or not, image on either side;
+%  G3. a caption (\captionof) in an image with a width: the image is then
+%      a minipage of that width.
+% run.zsh checks that there is no error and that no word overlaps an image.
+\documentclass[11pt,a4paper]{article}
+\usepackage{iftex}
+\ifPDFTeX \usepackage[T1]{fontenc}\usepackage{lmodern}\fi
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{caption}
+\usepackage[breakable]{tcolorbox}
+\usepackage{wrapblock}
+\newcommand\img[1][3cm]{\fbox{\parbox[t][#1][s]{3cm}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+\newcommand\sentence{The unknowns of the problem are the impulse, the velocity and the angular velocity after the impact. }
+\newcommand\para{\sentence\sentence\sentence}
+\newcommand\remark[1][]{\begin{tcolorbox}[#1]A remark in a box, which takes the width left beside the image.\end{tcolorbox}}
+\begin{document}
+G1 --- a paragraph that starts in a group
+
+\begin{wrapblock}{\img}
+Short paragraph.
+
+{\bfseries Bold start.} \para\para
+\end{wrapblock}
+
+\begin{wrapblock}[l]{\img}
+Short paragraph.
+
+{\bfseries Bold start.} \para\para
+\end{wrapblock}
+
+G2 --- a tcolorbox beside the image
+
+\begin{wrapblock}{\img[4cm]}
+Short paragraph.
+
+\remark
+
+\para
+\end{wrapblock}
+
+\begin{wrapblock}[l]{\img[4cm]}
+Short paragraph.
+
+\remark
+
+\para
+\end{wrapblock}
+
+\begin{wrapblock}{\img[4cm]}
+Short paragraph.
+
+\remark[breakable]
+
+\para
+\end{wrapblock}
+
+\begin{wrapblock}[l]{\img[4cm]}
+Short paragraph.
+
+\remark[breakable]
+
+\para
+\end{wrapblock}
+
+\clearpage
+G3 --- a caption in the image
+
+\begin{wrapblock}[width=4cm]{\img\captionof{figure}{A caption below the image, on more than one line.}}
+\para\para\para
+\end{wrapblock}
+
+\begin{wrapblock}[l, width=4cm]{\img\captionof{figure}{A caption below the image, on more than one line.}}
+\para\para\para
+\end{wrapblock}
+\end{document}
