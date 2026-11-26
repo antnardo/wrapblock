@@ -1,0 +1,60 @@
+% Blocks after a heading, and blocks near the bottom of a page.
+%  B1. a block right after a heading, first paragraph not indented
+%      (\@afterheading removes the \lastbox of the line, meant to be the
+%      indentation box: it took the image, which was lost), image on
+%      either side, with a caption, after a run-in heading;
+%  B2. a block whose text is shorter than its image, followed by a
+%      heading, at heights that move the heading to the next page, under
+%      \flushbottom (book): the room kept below the image was a skip, that
+%      \addpenalty took back, and the page broke before it; the page was
+%      stretched and the image ran out of it.
+% run.zsh checks with bottom.py that every image is there (16) and that no
+% word lies below the text area.
+\documentclass[11pt,a4paper]{book}
+\usepackage{iftex}
+\ifPDFTeX \usepackage[T1]{fontenc}\usepackage{lmodern}\fi
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{caption}
+\usepackage{wrapblock}
+\newcommand\img[1][3cm]{\fbox{\parbox[t][#1][s]{3cm}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+\newcommand\sentence{The unknowns of the problem are the impulse, the velocity and the angular velocity after the impact. }
+\newcommand\scene[1]{%
+  \noindent Scene #1\par\vspace*{#1}
+  \section*{A heading}
+  \begin{wrapblock}[width=5cm]{\img[4cm]\captionof{figure}{A caption below the image, on more than one line, which makes the image taller.}}
+  \sentence\sentence
+  \end{wrapblock}
+  \section*{The next heading}
+  \sentence\sentence\sentence\sentence\par\clearpage}
+\begin{document}
+\section*{B1 --- starred section}
+\begin{wrapblock}{\img}
+\sentence\sentence
+\end{wrapblock}
+
+\section{Numbered section}
+
+\begin{wrapblock}[l]{\img}
+\sentence\sentence
+\end{wrapblock}
+
+\subsection{Subsection}
+\begin{wrapblock}[width=5cm]{\img\captionof{figure}{A caption.}}
+\sentence\sentence\sentence
+\end{wrapblock}
+
+\paragraph{A run-in heading} starts the paragraph with its text.
+\begin{wrapblock}{\img}
+\sentence\sentence
+\end{wrapblock}
+
+\subsubsection*{Subsubsection}
+\begin{wrapblock}[l]{\img}
+\sentence\sentence
+\end{wrapblock}
+\clearpage
+
+\scene{360pt}\scene{370pt}\scene{380pt}\scene{390pt}\scene{400pt}\scene{410pt}
+\scene{420pt}\scene{430pt}\scene{440pt}\scene{450pt}\scene{460pt}
+\end{document}

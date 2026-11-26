@@ -513,8 +513,11 @@
     % Centred or ragged-left text: \leftskip comes before the image and
     % would move it. The opposite glue takes it back to the start of the
     % line, and the same glue after it puts the text where it was.
+    % After a heading with no indentation, \@afterheading removes the
+    % \lastbox of the line, meant to be the indentation box: a kern after
+    % the image keeps it from being taken instead.
     \skip_if_eq:nnTF { \leftskip } { 0pt }
-      { \box_use_drop:N \l_tmpa_box }
+      { \box_use_drop:N \l_tmpa_box \tex_kern:D 0pt \scan_stop: }
       {
         \tex_penalty:D 10000 ~
         \skip_horizontal:n { - \leftskip }
@@ -1225,10 +1228,23 @@
     \bool_if:NT \g__wrapblock_active_bool
       {
         \__wrapblock_check_ship:
+        % The room down to the bottom of the image is a kern, and only the
+        % space below the image (vsep) a skip. \addpenalty (a heading, a
+        % list) takes the last skip back and puts its penalty before it:
+        % were the whole room a skip, the page could break there, and the
+        % image run out of the page. \addvspace still takes the larger of
+        % its space and vsep, as after a line of text. The penalties keep
+        % the kern and the skip from being breakpoints.
         \dim_compare:nNnT { \pagetotal + \pagedepth } < { \g__wrapblock_bottom_dim }
           {
+            \dim_set:Nn \l_tmpa_dim
+              { \g__wrapblock_bottom_dim - \pagetotal - \pagedepth }
+            \dim_set:Nn \l_tmpb_dim
+              { \dim_min:nn { \l__wrapblock_vsep_dim } { \l_tmpa_dim } }
             \nobreak
-            \skip_vertical:n { \g__wrapblock_bottom_dim - \pagetotal - \pagedepth }
+            \tex_kern:D \dim_eval:n { \l_tmpa_dim - \l_tmpb_dim }
+            \nobreak
+            \skip_vertical:N \l_tmpb_dim
           }
         \__wrapblock_stop:
       }

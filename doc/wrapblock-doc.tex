@@ -457,7 +457,9 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   \item a paragraph that starts inside a group, such as \verb|{\bfseries Bold} text| or a breakable \env{tcolorbox}, lost its shape when the group ended, and ran over the image;
   \item a \env{tcolorbox} between two paragraphs, beside the image, was as wide as the line and overlapped the image: it now takes the width left beside the image;
   \item with the \key{width} key, the image is a \env{minipage} of that width: it may hold a caption (\cs{captionof}), which gave errors;
-  \item a breakable \env{tcolorbox} below the image, right after one beside it with no blank line between them, kept the shape of the first: it was moved right by the width of the image, and ran out of the page.
+  \item a breakable \env{tcolorbox} below the image, right after one beside it with no blank line between them, kept the shape of the first: it was moved right by the width of the image, and ran out of the page;
+  \item a block right after a heading, when the paragraph after the heading is not indented, lost its image (0.1.4 did too);
+  \item a block whose text is shorter than its image, followed by a heading that goes to the next page, left its image out of the page: the space kept below the image went to the next page with the heading. The heading after such a block is now as far from the image as from a line of text: the larger of its space and \key{vsep}.
   \end{itemize}
 \end{description}
 
@@ -627,7 +629,7 @@ At the end of the text, \fn{end:} deals with three cases, in order:
 \begin{enumerate}
 \item \emph{A deferred image is still waiting.} The text was measured long enough to reach the next page, but it ended on this one. This should not happen; a tall line can cause it. The image goes back to the pending state, and the page is broken first if the image does not fit after the text.
 \item \emph{The image is still pending}, because the block is empty or because of the case above. A paragraph made of one empty line is typeset to carry it.
-\item \emph{The text ended above the bottom of the image.} Vertical space is added down to it, with \cs{nobreak} before it. The next text thus starts below the image: this is what closes the block.
+\item \emph{The text ended above the bottom of the image.} Vertical space is added down to it. The next text thus starts below the image: this is what closes the block. The room down to the bottom of the image is a kern, and only the space below the image, \key{vsep}, is a skip; \cs{nobreak} comes before each. Were the whole room a skip, \cs{addpenalty}, which a heading and a list use, would take it back and put its penalty before it: the page could then break there, the room would go to the next page and be discarded, and the image would run out of the page, the more so under \cs{flushbottom}, which stretches a page that ends too early. With the kern, only \key{vsep} can go; and \cs{addvspace} still takes the larger of its own space and \key{vsep}, as after the last line of a paragraph.
 \end{enumerate}
 \fn{stop:} then ends the zone and puts the penalties back.
 
@@ -752,6 +754,7 @@ The opposite case: a paragraph that starts inside a group that ends before the p
 \item The first line starts at its own indentation, the narrowed one. A kern moves the image from there to the left edge of the block, or to its right edge minus the width of the image.
 \item The image is lowered so that its top is at the top of the first line, a strut height above the baseline.
 \item In centred or ragged-left text, \cs{leftskip} comes before the image in the line, and would move it. The opposite glue is put before the image, and \cs{leftskip} again after it: the two cancel exactly, whatever their stretch, and the image is back at the start of the line. The two penalties forbid a line break at these glues.
+\item Otherwise, a kern of zero width follows the image. After a heading whose next paragraph is not indented (the \LaTeX{} default in English), the \cs{everypar} of \cs{@afterheading} removes the \cs{lastbox} of the line, meant to be the indentation box. The image would be taken instead, and lost; the kern stops \cs{lastbox}, which then finds nothing to remove, or the indentation box when it is there.
 \end{itemize}
 
 \code{labels}
