@@ -275,8 +275,17 @@
     \dim_compare:nNnTF { \pagegoal } = { \c_max_dim }
       { \dim_set:Nn #1 { \topskip } }     % empty page
       {
+        % the interline glue TeX will put: \baselineskip less the depth
+        % before and the height of the line, or \lineskip when that leaves
+        % less than \lineskiplimit (a deep box before: a tabular, a minipage)
         \dim_compare:nNnTF { \g__wrapblock_prevdepth_dim } > { -1000pt }
-          { \dim_set:Nn #1 { \pagetotal + \baselineskip - \g__wrapblock_prevdepth_dim } }
+          {
+            \dim_set:Nn #1
+              { \baselineskip - \g__wrapblock_prevdepth_dim - \box_ht:N \strutbox }
+            \dim_compare:nNnT {#1} < { \lineskiplimit }
+              { \dim_set:Nn #1 { \lineskip } }
+            \dim_set:Nn #1 { \pagetotal + #1 + \box_ht:N \strutbox }
+          }
           { \dim_set:Nn #1 { \pagetotal + \box_ht:N \strutbox } }
       }
   }
@@ -864,6 +873,18 @@
 % gets. The width is set in the group of the box, and ends with it.
 \cs_new_protected:Npn \__wrapblock_box_width:
   {
+    % A box right after a paragraph, with no blank line between them, comes
+    % while that paragraph is still open: end it first, so that the zone
+    % knows where it stands (a deferred image is committed at its end).
+    % Otherwise a key such as center, which fixes the width when it is
+    % read, would keep the full line.
+    \bool_lazy_all:nT
+      {
+        { \l__wrapblock_outer_bool }
+        { \g__wrapblock_active_bool }
+        { \mode_if_horizontal_p: }
+      }
+      { \par }
     \bool_lazy_all:nT
       {
         { \l__wrapblock_outer_bool }

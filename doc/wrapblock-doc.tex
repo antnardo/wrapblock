@@ -459,6 +459,8 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   \item with the \key{width} key, the image is a \env{minipage} of that width: it may hold a caption (\cs{captionof}), which gave errors;
   \item a breakable \env{tcolorbox} below the image, right after one beside it with no blank line between them, kept the shape of the first: it was moved right by the width of the image, and ran out of the page;
   \item a block right after a heading, when the paragraph after the heading is not indented, lost its image (0.1.4 did too);
+  \item a block right after a deep line, such as a \env{tabular} centred on its axis, took its first line for higher than it was, by up to the depth of that line: \TeX{} puts \cs{lineskip} below such a line, not \cs{baselineskip}. The image came lower than the room kept for it, and a heading after the block ran into it;
+  \item a \env{tcolorbox} right after a paragraph, with no blank line between them, came while that paragraph was still open: with a deferred image not yet committed, or with a key such as \texttt{center}, which fixes the width when it is read, it kept the full line, overlapped the image and gave an overfull box;
   \item a block whose text is shorter than its image, followed by a heading that goes to the next page, left its image out of the page: the space kept below the image went to the next page with the heading. The heading after such a block is now as far from the image as from a line of text: the larger of its space and \key{vsep}.
   \end{itemize}
 \end{description}
@@ -690,7 +692,7 @@ The two hooks act only while a zone runs, and only in the text of the block itse
 This function gives the baseline of the first line of the paragraph, in page coordinates. There are three cases:
 \begin{itemize}
 \item \emph{An empty page}: the first baseline is at \cs{topskip}.
-\item \emph{The usual case.} When \texttt{para/begin} runs, the page builder has taken the \cs{parskip} glue, and a glue on the page adds the depth of the line before it to \cs{pagetotal}. The baseline of that line is therefore at \cs{pagetotal} minus its depth, kept by \texttt{para/before}; the new baseline is one \cs{baselineskip} lower.
+\item \emph{The usual case.} When \texttt{para/begin} runs, the page builder has taken the \cs{parskip} glue, and a glue on the page adds the depth of the line before it to \cs{pagetotal}. The baseline of that line is therefore at \cs{pagetotal} minus its depth, kept by \texttt{para/before}; the new baseline is one \cs{baselineskip} lower. Unless the line before is deep (a \env{tabular} centred on its axis, a \env{minipage}): when \cs{baselineskip} less that depth and the height of the new line, taken as a strut, leaves less than \cs{lineskiplimit}, \TeX{} puts \cs{lineskip} between them, and the new line sits \cs{lineskip} below \cs{pagetotal}, its baseline a strut height lower.
 \item \emph{No interline glue} (\cs{prevdepth} is $-1000$\,pt or less, after a rule or \cs{nointerlineskip}): the line sits right below \cs{pagetotal}, and its baseline is taken a strut height lower.
 \end{itemize}
 
@@ -901,7 +903,7 @@ The text of a \cs{parbox}, a \env{minipage} or a \texttt{p} cell is typeset with
 
 \code{boxwidth}
 
-A \env{tcolorbox} computes its width from \cs{linewidth} when it starts, between two paragraphs, before it starts the line it sits on: \cs{linewidth} is then the full line, and the box would overlap the image even on a narrowed line. \fn{box_width:} runs before \cs{tcolorbox}, through the hook \texttt{cmd/tcolorbox/before}, inside the group of the box. When the box starts beside the image --- the image is still to be placed, or \cs{pagetotal} has not reached \gv{bottom_dim} --- \cs{linewidth} becomes the width of the narrowed line, computed as in \fn{shape:Nnnn}. The line of the box is then narrowed like any other, and the box fits on it. Other boxes need no such help: a \env{minipage} or a \cs{parbox} is given its width by the author.
+A \env{tcolorbox} computes its width from \cs{linewidth} when it starts, between two paragraphs, before it starts the line it sits on: \cs{linewidth} is then the full line, and the box would overlap the image even on a narrowed line. \fn{box_width:} runs before \cs{tcolorbox}, through the hook \texttt{cmd/tcolorbox/before}, inside the group of the box. A box that comes right after a paragraph, with no blank line between them, finds that paragraph still open; \fn{box_width:} ends it first, so that the zone knows where it stands --- a deferred image is committed at the end of that paragraph --- since a key such as \texttt{center} fixes the width of the box as soon as it is read. When the box starts beside the image --- the image is still to be placed, or \cs{pagetotal} has not reached \gv{bottom_dim} --- \cs{linewidth} becomes the width of the narrowed line, computed as in \fn{shape:Nnnn}. The line of the box is then narrowed like any other, and the box fits on it. Other boxes need no such help: a \env{minipage} or a \cs{parbox} is given its width by the author.
 
 \code{inbox}
 

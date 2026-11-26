@@ -9,7 +9,15 @@
 %      beside the image, the second below it: the paragraph of the first
 %      ends in the group of the second, and its narrowed shape was left
 %      behind for the second (0.1.5: shifted and too wide, overfull box),
-%      image on either side.
+%      image on either side;
+%  G5. a centred tcolorbox narrower than the line (width=.8\linewidth,
+%      center), right after a paragraph with no blank line: it came while
+%      the paragraph was still open, and kept the full line (0.1.5: it ran
+%      over the image), image on either side, then with a deferred image;
+%  G6. a block after a deep box (a tabular centred on its axis), its image
+%      taller than its text, then a heading: TeX puts \lineskip after the
+%      deep box, the first line of the block came lower than computed, and
+%      the heading ran into the image (0.1.5).
 % run.zsh checks that there is no error, no overfull box, and that no word
 % overlaps an image.
 \documentclass[11pt,a4paper]{article}
@@ -98,4 +106,52 @@ G4 --- a box beside the image, then a box below it
 \remark[breakable]
 \begin{tcolorbox}[breakable]A remark in a box below the image, which takes the full width of the line.\end{tcolorbox}
 \end{wrapblock}
+
+\clearpage
+G5 --- a centred box right after a paragraph
+
+\begin{wrapblock}{\img[4cm]}
+\para
+\remark[width=.8\linewidth, center]
+\para
+\end{wrapblock}
+
+\begin{wrapblock}[l]{\img[4cm]}
+\para
+\remark[width=.8\linewidth, center]
+\para
+\end{wrapblock}
+
+\clearpage
+\vspace*{21cm}
+\begin{wrapblock}{\img[8cm]}
+\para\para\para\para
+\remark[width=.8\linewidth, center]
+\para
+\end{wrapblock}
+
+\clearpage
+G6 --- a block after a deep box, then a heading
+
+\begin{center}
+\begin{tabular}{ll}
+one & two\\ three & four\\ five & six\\ seven & eight\\ nine & ten\\ eleven & twelve
+\end{tabular}
+\end{center}
+\begin{wrapblock}{\img[6cm]}
+\para
+\end{wrapblock}
+\section*{A heading after the block}
+\para
+
+\begin{center}
+\begin{tabular}{ll}
+one & two\\ three & four\\ five & six\\ seven & eight\\ nine & ten\\ eleven & twelve
+\end{tabular}
+\end{center}
+\begin{wrapblock}[l]{\img[6cm]}
+\para
+\end{wrapblock}
+\section*{A heading after the block}
+\para
 \end{document}
