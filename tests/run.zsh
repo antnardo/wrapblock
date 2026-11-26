@@ -2,7 +2,8 @@
 # Runs every test with pdfLaTeX and LuaLaTeX, plain and tagged:
 # limits.tex (article and book), extra.tex, contexts.tex (and twocolumn),
 # floats.tex, images.tex, groups.tex, items.tex, heading.tex.
-# Prints errors, `moved` warnings, overlaps and tagpdf structure warnings.
+# Prints errors, overfull boxes, `moved` warnings, overlaps and tagpdf
+# structure warnings.
 # First checks that the documentation prints the whole package (chunks.py).
 # Needs pdflatex, lualatex, python3 and pdftotext (poppler) in the PATH.
 # With veraPDF in the PATH, each tagged build is also checked against PDF/UA-2,
@@ -21,8 +22,9 @@ compile() {  # job, preamble definitions, file, runs
   done
   local errors=$(grep -c '^!' $1.log)
   local moved=$(grep -c 'moved to a new page' $1.log)
+  local overfull=$(grep -c '^Overfull \\hbox' $1.log)
   local tagwarn=$(grep 'Package tagpdf Warning' $1.log | grep -v unicode-math | wc -l | tr -d ' ')
-  printf "%-26s errors=%s moved=%s tagpdf=%s  " $1 $errors $moved $tagwarn
+  printf "%-26s errors=%s overfull=%s moved=%s tagpdf=%s  " $1 $errors $overfull $moved $tagwarn
   python3 collisions.py $1.pdf | head -1
   if [[ $1 == *-tag ]] && (( $+commands[verapdf] )); then
     local failed=$(verapdf --flavour ua2 --format mrr $1.pdf 2>/dev/null |
@@ -47,7 +49,8 @@ for engine in pdflatex lualatex; do
   # unusual images: a tcolorbox, text, nothing, too wide, too tall
   compile images-$engine "" images 2
   # a paragraph that starts in a group, a tcolorbox beside the image,
-  # a caption in an image with a width
+  # a caption in an image with a width, a tcolorbox below the image
+  # right after one beside it
   compile groups-$engine "" groups 2
   # items in a block, the list opened before it and closed after it
   compile items-$engine "" items 2

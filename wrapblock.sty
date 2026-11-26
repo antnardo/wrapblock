@@ -14,7 +14,7 @@
 %% The Current Maintainer of this work is Antonin Marchand.
 % <ident>
 \NeedsTeXFormat{LaTeX2e}[2023-06-01]
-\ProvidesExplPackage{wrapblock}{2026-11-25}{0.1.5}
+\ProvidesExplPackage{wrapblock}{2026-11-26}{0.1.5}
   {Closed block with an image beside its text}
 % </ident>
 
@@ -593,20 +593,29 @@
 
 \hook_gput_code:nnn { para / begin } { wrapblock }
   {
-    \bool_if:NT \l__wrapblock_outer_bool
-      {
-        \bool_if:NT \l__wrapblock_inside_bool { \__wrapblock_unstale: }
-        \__wrapblock_para_begin:
-      }
+    \bool_if:NT \l__wrapblock_outer_bool { \__wrapblock_para_begin: }
   }
 % </parahooks>
 
 % <unstale>
 % TeX clears \parshape at the end of a paragraph, but locally. A paragraph
-% ended inside a deeper group (an item that opens a nested list) leaves
-% its narrowed shape behind, and the next paragraph gets it back. It is
+% ended inside a deeper group (an item that opens a nested list, a
+% tcolorbox that starts in the group of the next one) leaves its narrowed
+% shape behind, and a later paragraph gets it back, maybe only when some
+% group ends after it has started. It is looked for at the end of a
+% paragraph that was given no shape, just before the line breaking: it is
 % recognised among the shapes set in the block; its last entry is what
 % LaTeX had given.
+\hook_gput_code:nnn { para / end } { wrapblock }
+  {
+    \bool_lazy_all:nT
+      {
+        { \l__wrapblock_outer_bool }
+        { \l__wrapblock_inside_bool }
+        { ! \g__wrapblock_inpar_bool }
+      }
+      { \__wrapblock_unstale: }
+  }
 \cs_new_protected:Npn \__wrapblock_unstale:
   {
     \int_compare:nNnT { \parshape } > { 1 }

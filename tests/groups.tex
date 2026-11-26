@@ -4,8 +4,14 @@
 %  G2. a tcolorbox between two paragraphs, beside the image: it takes the
 %      width left there, breakable or not, image on either side;
 %  G3. a caption (\captionof) in an image with a width: the image is then
-%      a minipage of that width.
-% run.zsh checks that there is no error and that no word overlaps an image.
+%      a minipage of that width;
+%  G4. two breakable tcolorboxes with no blank line between them, the first
+%      beside the image, the second below it: the paragraph of the first
+%      ends in the group of the second, and its narrowed shape was left
+%      behind for the second (0.1.5: shifted and too wide, overfull box),
+%      image on either side.
+% run.zsh checks that there is no error, no overfull box, and that no word
+% overlaps an image.
 \documentclass[11pt,a4paper]{article}
 \usepackage{iftex}
 \ifPDFTeX \usepackage[T1]{fontenc}\usepackage{lmodern}\fi
@@ -76,5 +82,20 @@ G3 --- a caption in the image
 
 \begin{wrapblock}[l, width=4cm]{\img\captionof{figure}{A caption below the image, on more than one line.}}
 \para\para\para
+\end{wrapblock}
+
+\clearpage
+G4 --- a box beside the image, then a box below it
+
+\begin{wrapblock}[l, width=.33\textwidth]{\img}
+\para
+\remark[breakable]
+\begin{tcolorbox}[breakable]A remark in a box below the image, which takes the full width of the line.\end{tcolorbox}
+\end{wrapblock}
+
+\begin{wrapblock}[r, width=.33\textwidth]{\img}
+\para
+\remark[breakable]
+\begin{tcolorbox}[breakable]A remark in a box below the image, which takes the full width of the line.\end{tcolorbox}
 \end{wrapblock}
 \end{document}

@@ -48,7 +48,7 @@
 \title{\pkg{wrapblock}\\[0.4em]
   \large An image beside its own text, which wraps around it and runs below}
 \author{Antonin Marchand}
-\date{Version 0.1.5 --- 25 November 2026}
+\date{Version 0.1.5 --- 26 November 2026}
 
 \begin{document}
 \maketitle
@@ -452,11 +452,12 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   The documentation says what the image may be (section~\ref{sec:image}).
 \item[0.1.3 (18 November 2026)] No change in the code. The README says where to report a bug, and the documentation reads the code of the package wherever \TeX{} finds it, so that it compiles from one folder.
 \item[0.1.4 (19 November 2026)] Loading the package no longer slows down a document: the foreground of a page is asked for only when a deferred image waits for it. A document without any block compiled 20\,\% slower with pdf\LaTeX{} and 40\,\% slower with Lua\LaTeX{}; it now takes the same time as without the package.
-\item[0.1.5 (25 November 2026)] The examples are renamed \texttt{wrapblock-mwe-\dots}. Corrections:
+\item[0.1.5 (26 November 2026)] The examples are renamed \texttt{wrapblock-mwe-\dots}. Corrections:
   \begin{itemize}
   \item a paragraph that starts inside a group, such as \verb|{\bfseries Bold} text| or a breakable \env{tcolorbox}, lost its shape when the group ended, and ran over the image;
   \item a \env{tcolorbox} between two paragraphs, beside the image, was as wide as the line and overlapped the image: it now takes the width left beside the image;
-  \item with the \key{width} key, the image is a \env{minipage} of that width: it may hold a caption (\cs{captionof}), which gave errors.
+  \item with the \key{width} key, the image is a \env{minipage} of that width: it may hold a caption (\cs{captionof}), which gave errors;
+  \item a breakable \env{tcolorbox} below the image, right after one beside it with no blank line between them, kept the shape of the first: it was moved right by the width of the image, and ran out of the page.
   \end{itemize}
 \end{description}
 
@@ -535,7 +536,7 @@ Hook & What the package does there \\
 \midrule
 \texttt{para/before} & keeps \cs{prevdepth}, needed to place the first line \\
 \texttt{para/begin} & sets the shape of the paragraph; places the image in the first one \\
-\texttt{para/end} & clears three penalties in the paragraph that ends the page (deferred image) \\
+\texttt{para/end} & removes a shape left over by an earlier paragraph; clears three penalties in the paragraph that ends the page (deferred image) \\
 \texttt{para/after} & ends the zone or keeps it together; commits a deferred image \\
 \cs{everydisplay} & sets the shape again after a displayed equation \\
 \cs{@arrayparboxrestore} & at the start of a box in the block: warns if it is too wide, and turns the package off inside \\
@@ -731,7 +732,7 @@ For instance, in the usual case (\texttt{\#2} and \texttt{\#3} are 0), a paragra
 
 \code{unstale}
 
-\TeX{} clears \cs{parshape} at the end of every paragraph, but only locally. Suppose a paragraph ends inside a deeper group than the one it started in: an item whose text opens a nested list, for instance. When that group ends, the narrowed shape comes back, and the next paragraph of the outer level would be narrowed a second time. \fn{unstale:} recognises such a leftover at the start of a paragraph of the block: a \cs{parshape} of more than one line whose signature is among those the block has set. It keeps only its last entry, which is the shape \LaTeX{} had given.
+\TeX{} clears \cs{parshape} at the end of every paragraph, but only locally. Suppose a paragraph ends inside a deeper group than the one it started in: an item whose text opens a nested list, for instance. When that group ends, the narrowed shape comes back, and the next paragraph of the outer level would be narrowed a second time. The leftover may also come back only after a later paragraph has started: a breakable \env{tcolorbox} beside the image, followed with no blank line by another one, starts its paragraph in a group, so that \fn{reshape:} sets its shape again at the level of the block; that paragraph ends in the group of the second box, and the shape stays at the level of the block, where the paragraph of the second box, which starts deeper, finds it when it ends. \fn{unstale:} is therefore called at \texttt{para/end}, just before the line breaking, in a paragraph of the block that was given no shape (\gv{inpar_bool} false): a \cs{parshape} of more than one line whose signature is among those the block has set is a leftover. It keeps only its last entry, which is the shape \LaTeX{} had given. A paragraph that is given a shape needs nothing: \fn{shape:Nnnn} reads its base line in the last entry, which is the same.
 
 \code{reshape}
 
