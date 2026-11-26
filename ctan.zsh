@@ -9,7 +9,7 @@ out=../wrapblock-construction/ctan
 mkdir -p $out/wrapblock
 find $out/wrapblock -type f -delete
 [[ -f $out/wrapblock.zip ]] && mv $out/wrapblock.zip $out/wrapblock-previous.zip
-cp README.md wrapblock.sty doc/wrapblock-doc.tex doc/wrapblock-doc.pdf examples/mwe-*.tex $out/wrapblock/
+cp README.md wrapblock.sty doc/wrapblock-doc.tex doc/wrapblock-doc.pdf examples/wrapblock-mwe-*.tex $out/wrapblock/
 chmod 755 $out/wrapblock && chmod 644 $out/wrapblock/*
 (cd $out && /usr/bin/zip -q -r -X wrapblock.zip wrapblock -x '*.DS_Store')
 unzip -l $out/wrapblock.zip
