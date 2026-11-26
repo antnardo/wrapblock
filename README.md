@@ -16,7 +16,8 @@ the image never spills over what follows.
 
 The package gives the image no size of its own: the room taken from the text
 is the width and the height of the image as it is given. Only the width can
-be forced, with the `width` key.
+be forced, with the `width` key, or searched with `width=fit`: the width
+where the image and the text beside it are as tall as each other.
 
 Four properties that no existing wrapping package combines:
 
