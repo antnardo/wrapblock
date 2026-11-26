@@ -1,0 +1,60 @@
+% width=fit: the width of the block searched between fit min and fit max.
+%  F1. an image of fixed width with a long caption below it: the wider the
+%      block, the fewer lines of caption, the taller the text beside it;
+%  F2. an image whose width is a fraction of \linewidth, so of the block:
+%      the image grows with the block;
+%  F3. a short text beside a tall image: the image is the taller at every
+%      width, no crossing, warning fit, natural width;
+%  F4. an image whose width is a fraction of \wrapblocklinewidth, the full
+%      line: it keeps its size whatever the width of the block;
+%  F5. F1 and F2 with the image on the left, and fit max lowered.
+% run.zsh checks that there is no error, no overfull box, that no word
+% overlaps an image, and prints the widths found (fit-width in the log).
+\documentclass[11pt,a4paper]{article}
+\usepackage{iftex}
+\ifPDFTeX \usepackage[T1]{fontenc}\usepackage{lmodern}\fi
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{caption}
+\usepackage{wrapblock}
+% a marked frame of the given width and height
+\newcommand\imgframe[2]{\fbox{\parbox[t][#2][s]{#1}{\tiny IMGA\hfill IMGB\par\vfill IMGC}}}
+\newcommand\sentence{The unknowns of the problem are the impulse, the velocity and the angular velocity after the impact. }
+\newcommand\para{\sentence\sentence\sentence}
+\newcommand\longcaption{\captionof{figure}{A long caption below the image, which takes fewer lines as the block widens, and more lines as it narrows: the block is lowest where the image and the text beside it are as tall as each other.}}
+\begin{document}
+F1 --- an image of fixed width, a long caption
+
+\begin{wrapblock}[width=fit]{\centering\imgframe{4cm}{3cm}\longcaption}
+\para\para\para
+\end{wrapblock}
+
+F2 --- an image that grows with the block
+
+\begin{wrapblock}[width=fit]{\imgframe{.9\linewidth}{.6\linewidth}}
+\para
+\end{wrapblock}
+
+F3 --- a short text, no crossing
+
+\begin{wrapblock}[width=fit]{\imgframe{4cm}{8cm}}
+\sentence
+\end{wrapblock}
+
+\clearpage
+F4 --- an image that keeps its size
+
+\begin{wrapblock}[width=fit]{\centering\imgframe{.3\wrapblocklinewidth}{3cm}\longcaption}
+\para\para\para
+\end{wrapblock}
+
+F5 --- on the left, fit max lowered
+
+\begin{wrapblock}[l, width=fit, fit max=.5]{\centering\imgframe{4cm}{3cm}\longcaption}
+\para\para\para
+\end{wrapblock}
+
+\begin{wrapblock}[l, width=fit, fit max=.5]{\imgframe{.9\linewidth}{.6\linewidth}}
+\para
+\end{wrapblock}
+\end{document}

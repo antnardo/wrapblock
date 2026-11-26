@@ -181,7 +181,8 @@ The text of the block is read as an argument before it is typeset, so that it ca
 Key & Default & Meaning \\
 \midrule
 \key{side} & \texttt{r} & side of the image: \texttt{r} (right) or \texttt{l} (left); \key{l} and \key{r} alone are short forms \\
-\key{width} & \texttt{natural} & width reserved for the image: \texttt{natural}, the width of the image itself, or a length \\
+\key{width} & \texttt{natural} & width reserved for the image: \texttt{natural}, the width of the image itself, a length, or \texttt{fit}, searched \\
+\key{fit min}, \key{fit max} & \texttt{0.1}, \texttt{0.9} & bounds of the search of \key{width=fit}, as fractions of the line \\
 \key{hsep} & \texttt{1em} & horizontal space between the image and the text \\
 \key{vsep} & \texttt{0.5\textbackslash baselineskip} & vertical space below the image \\
 \key{defer} & \texttt{true} & whether the image may go to the top of the next page \\
@@ -197,9 +198,29 @@ Key & Default & Meaning \\
   Short for \key{side=l}. Likewise \key{r} for \key{side=r}.
 \end{docKey}
 
-\begin{docKey}[wrapblock]{width}{=\texttt{natural}\textbar\meta{length}}{default \texttt{natural}}
+\begin{docKey}[wrapblock]{width}{=\texttt{natural}\textbar\meta{length}\textbar\texttt{fit}}{default \texttt{natural}}
   The width reserved for the image. With \texttt{natural}, it is the width of the image itself. With a \meta{length}, the image is typeset as a \env{minipage} of that width, centred: this aligns several blocks whose images differ in width, and lets the image hold paragraphs or a caption below it (\cs{captionof}). The length is taken as it is: a room narrower than the image lets the image stick out on the right, with an \texttt{Overfull \textbackslash hbox} from \TeX{}.
+
+  In that \env{minipage}, \cs{linewidth} and \cs{textwidth} are the width of the block, not of the page: an image of width \texttt{.5\textbackslash linewidth} is half as wide as the block, and changes with it. For a fraction of the full line, whatever the width of the block, use \cs{wrapblocklinewidth} (below).
+
+  With \texttt{fit}, the package searches the width itself (section~\ref{sec:fit}). It is never the default.
 \end{docKey}
+
+\begin{docKey}[wrapblock]{fit min}{=\meta{number}}{default \texttt{0.1}}
+  The narrowest width tried by \key{width=fit}, as a fraction of the line.
+\end{docKey}
+
+\begin{docKey}[wrapblock]{fit max}{=\meta{number}}{default \texttt{0.9}}
+  The widest width tried by \key{width=fit}, as a fraction of the line.
+\end{docKey}
+
+\begin{docLength}{wrapblocklinewidth}{}
+  The full line of the block: \cs{linewidth} where the block starts, before the image takes its share. It is meant for the image, where \cs{linewidth} and \cs{textwidth} are the width of the block once the key \key{width} is given. With
+\begin{verbatim}
+\includegraphics[width=.33\wrapblocklinewidth]{...}
+\end{verbatim}
+the image is a third of the line in any block, whatever its width; this holds for a deferred image as well.
+\end{docLength}
 
 \begin{docKey}[wrapblock]{hsep}{=\meta{length}}{default \texttt{1em}}
   The horizontal space between the image and the text.
@@ -214,6 +235,23 @@ Key & Default & Meaning \\
 \end{docKey}
 
 The defaults of \key{hsep} and \key{vsep} are computed once, when the package is loaded, with the font and the \cs{baselineskip} of that moment: those of the normal size of the document. A length given in the document is computed where it is given.
+
+\subsection{Searching the width: \texorpdfstring{\key{width=fit}}{width=fit}}\label{sec:fit}
+
+An image with a caption below it is a trade: the wider the block, the fewer lines of caption, but the narrower the text beside the image, and the taller. An image whose width is a fraction of \cs{linewidth} grows with the block instead. \key{width=fit} looks for the width where the image and the text beside it are as tall as each other: the block is then as low as it can be, with no blank below the shorter of the two.
+
+At a given width, the image is built as it will be, in its \env{minipage}, and the text is set in the room left beside it, both in boxes that are thrown away, like the measure of section~\ref{sec:know}. The width is first tried at \key{fit min} and at \key{fit max}. If the image is the taller at one and the shorter at the other, the two heights cross between them, and a bisection closes on the crossing to 2\,\% of the line: six more trials with the default bounds. If the two bounds agree, the middle is tried as well: an image that grows with the block may be the taller there, between a text that is the taller beside a small image and one that is the taller in a column that has all but vanished. With no crossing found, the package says so (warning \texttt{fit}) and the image keeps its natural width. The width found is written to the \texttt{.log} (information \texttt{fit-width}), to be copied into the key \key{width} once the text is final.
+
+The cost is that of the measure, eight or nine times: the text and the image are typeset at each trial, with the same limits (no verbatim; counters put back, but not a global count or a \cs{write}). Narrow trials do not report their \texttt{Overfull} boxes, since an image of fixed width is wider than a block at 0.1 of the line. Choose \key{fit min} no narrower than such an image: a crossing below its width would leave it sticking out of the block.
+
+\begin{verbatim}
+\begin{wrapblock}[width=fit, fit max=.5]{%
+  \centering
+  \includegraphics[width=.33\wrapblocklinewidth]{moseley}%
+  \captionof{figure}{A long caption, on as few lines as the text allows.}}
+Text...
+\end{wrapblock}
+\end{verbatim}
 
 \subsection{What the image may be}\label{sec:image}
 
@@ -452,7 +490,7 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   The documentation says what the image may be (section~\ref{sec:image}).
 \item[0.1.3 (18 November 2026)] No change in the code. The README says where to report a bug, and the documentation reads the code of the package wherever \TeX{} finds it, so that it compiles from one folder.
 \item[0.1.4 (19 November 2026)] Loading the package no longer slows down a document: the foreground of a page is asked for only when a deferred image waits for it. A document without any block compiled 20\,\% slower with pdf\LaTeX{} and 40\,\% slower with Lua\LaTeX{}; it now takes the same time as without the package.
-\item[0.1.5 (26 November 2026)] The examples are renamed \texttt{wrapblock-mwe-\dots}. Corrections:
+\item[0.1.5 (26 November 2026)] The examples are renamed \texttt{wrapblock-mwe-\dots}. New: \key{width=fit}, with \key{fit min} and \key{fit max}, which searches the width where the image and the text beside it are as tall as each other; \cs{wrapblocklinewidth}, the full line, for an image whose width is a fraction of the line in a block of any width. Corrections:
   \begin{itemize}
   \item a paragraph that starts inside a group, such as \verb|{\bfseries Bold} text| or a breakable \env{tcolorbox}, lost its shape when the group ended, and ran over the image;
   \item a \env{tcolorbox} between two paragraphs, beside the image, was as wide as the line and overlapped the image: it now takes the width left beside the image;
@@ -461,6 +499,7 @@ side-by-side \env{minipage}s & The text does not run below the image, and the bl
   \item a block right after a heading, when the paragraph after the heading is not indented, lost its image (0.1.4 did too);
   \item a block right after a deep line, such as a \env{tabular} centred on its axis, took its first line for higher than it was, by up to the depth of that line: \TeX{} puts \cs{lineskip} below such a line, not \cs{baselineskip}. The image came lower than the room kept for it, and a heading after the block ran into it;
   \item a \env{tcolorbox} right after a paragraph, with no blank line between them, came while that paragraph was still open: with a deferred image not yet committed, or with a key such as \texttt{center}, which fixes the width when it is read, it kept the full line, overlapped the image and gave an overfull box;
+  \item a block that opens with a \env{tcolorbox} put its image one line too high, over the end of the paragraph before, when the box is breakable, and below the box when it is not;
   \item a block whose text is shorter than its image, followed by a heading that goes to the next page, left its image out of the page: the space kept below the image went to the next page with the heading. The heading after such a block is now as far from the image as from a line of text: the larger of its space and \key{vsep}.
   \end{itemize}
 \end{description}
@@ -596,7 +635,17 @@ These variables serve the deferred image and the measure of the text:
 
 \code{keys}
 
-The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for one block. \key{width=natural} is kept as a width of minus \cs{maxdimen}, which no length can be; the code reads it as ``the width of the image''. The initial values of \key{hsep} and \key{vsep} are computed when the package is loaded, with the font and the \cs{baselineskip} of that moment.
+The keys are local: \cs{wrapblockset} sets them for the current group, and the optional argument of the environment for one block. \key{width=natural} is kept as a width of minus \cs{maxdimen}, which no length can be; the code reads it as ``the width of the image''. \key{width=fit} is kept the same way, with \lv{fit_bool} true: the search (\fn{fit:n}) replaces it by a length, or leaves it natural when it finds nothing. The initial values of \key{hsep} and \key{vsep} are computed when the package is loaded, with the font and the \cs{baselineskip} of that moment.
+
+\subsection{The search of \texorpdfstring{\key{width=fit}}{width=fit}}
+
+\code{fit}
+
+\fn{fit_eval:Nn} tries one width, a fraction of the line held in an fp variable: it builds the image in its \env{minipage} of that width, counters put back as in the environment, and measures the text in the room left, \cs{linewidth} less the width of the image and \key{hsep}, with \fn{measure:nn}. A room under 3\,em counts as an endless text. \lv{fit_mid_bool} says whether the image is the taller.
+
+The trial must not fill the log with the \texttt{Overfull} boxes of an image too wide for a narrow block. Setting \cs{hfuzz} and \cs{hbadness} is not enough: the \env{minipage}, and a caption, run \cs{@parboxrestore}, whose \cs{sloppy} sets \cs{hfuzz} again. \cs{sloppy} is therefore extended, in the group of the trial, with \fn{quiet:}.
+
+\fn{fit:n} tries the two bounds, and the middle if they agree. A bracket where the image is the taller at one end and the shorter at the other is closed by \fn{fit_step:n}, which halves it while it is wider than 0.02 of the line. Of the two ends, the one where the block, the taller of image and text, is the lower gives the width.
 
 \subsection{The environment}
 
@@ -606,7 +655,7 @@ The environment takes its text as an argument (\texttt{+b}), because the text ma
 
 In order, the environment:
 \begin{enumerate}
-\item ends the current paragraph, numbers the block and sets its keys;
+\item ends the current paragraph, numbers the block and sets its keys; keeps the line in \cs{wrapblocklinewidth}, and searches the width with \key{width=fit} (\fn{fit:n});
 \item builds the image once, with tagging suspended, only to measure it: \gv{height_dim} is its height and depth plus \key{vsep}, \gv{shift_dim} its width plus \key{hsep}. The \LaTeX{} counters are kept before and put back after (\fn{counters_save:}), so that a numbered equation or a caption in the image is not counted twice. The image is built for good later, inside the first paragraph;
 \item warns about an image taller than the page. An image that leaves less than 3\,em beside it is not wrapped at all: it is typeset on a line of its own, the text follows at full width, and nothing of the rest of the package is used (\lv{alone_bool});
 \item tells a block in a box from a block on the page. After \cs{par}, \TeX{} is in internal vertical mode in a \env{minipage} or a \cs{parbox}, and in outer vertical mode on the page: \ecs{mode_if_inner:TF} tests it. On the page, \fn{begin:n} prepares the zone;
@@ -666,7 +715,7 @@ The rule must be taller than the room by the shrink of the page. Otherwise, when
 
 \code{measure}
 
-The measure typesets the text at full width in a \cs{vbox} that is thrown away, and keeps its height and depth in \gv{text_dim}. Whatever the text writes to a file without \cs{immediate} (labels, table of contents, index) and its footnotes vanish with the box. Its other global effects are undone by hand:
+The measure typesets the text at full width (\fn{measure:n}), or at the width of a trial of \key{width=fit} (\fn{measure:nn}), in a \cs{vbox} that is thrown away, and keeps its height and depth in \gv{text_dim}. Whatever the text writes to a file without \cs{immediate} (labels, table of contents, index) and its footnotes vanish with the box. Its other global effects are undone by hand:
 \begin{itemize}
 \item \emph{The \LaTeX{} counters}, by \fn{counters_save:}. \cs{cl@@ckpt} lists them all, as \cs{@elt}\marg{name}. \cs{@elt} is redefined so that running the list appends to \gv{counters_tl} one command per counter, which sets it back to its present value.
 \item \emph{The label of an item.} \cs{@labels} is the box where \cs{item} leaves its label for the next paragraph. A block that comes first in an item would use the label in the measure, and leave none for the text. The box is copied, and set again from the copy after the measure.
@@ -903,7 +952,7 @@ The text of a \cs{parbox}, a \env{minipage} or a \texttt{p} cell is typeset with
 
 \code{boxwidth}
 
-A \env{tcolorbox} computes its width from \cs{linewidth} when it starts, between two paragraphs, before it starts the line it sits on: \cs{linewidth} is then the full line, and the box would overlap the image even on a narrowed line. \fn{box_width:} runs before \cs{tcolorbox}, through the hook \texttt{cmd/tcolorbox/before}, inside the group of the box. A box that comes right after a paragraph, with no blank line between them, finds that paragraph still open; \fn{box_width:} ends it first, so that the zone knows where it stands --- a deferred image is committed at the end of that paragraph --- since a key such as \texttt{center} fixes the width of the box as soon as it is read. When the box starts beside the image --- the image is still to be placed, or \cs{pagetotal} has not reached \gv{bottom_dim} --- \cs{linewidth} becomes the width of the narrowed line, computed as in \fn{shape:Nnnn}. The line of the box is then narrowed like any other, and the box fits on it. Other boxes need no such help: a \env{minipage} or a \cs{parbox} is given its width by the author.
+A \env{tcolorbox} computes its width from \cs{linewidth} when it starts, between two paragraphs, before it starts the line it sits on: \cs{linewidth} is then the full line, and the box would overlap the image even on a narrowed line. \fn{box_width:} runs before \cs{tcolorbox}, through the hook \texttt{cmd/tcolorbox/before}, inside the group of the box. A box that comes right after a paragraph, with no blank line between them, finds that paragraph still open; \fn{box_width:} ends it first, so that the zone knows where it stands --- a deferred image is committed at the end of that paragraph --- since a key such as \texttt{center} fixes the width of the box as soon as it is read. A box that opens the block starts its own paragraph, after a \cs{nointerlineskip}: the image, hung on its first line as on a line of the height of a strut, would go up into the line before when the box is breakable (the line is empty, of height zero), and down below the box when it is not (the line is the box). \fn{box_width:} then gives the image a line of its own first, an empty paragraph placed like a first line of text, takes the height of a strut back with a \cs{kern} (not a skip, which the \cs{addvspace} of the box would replace), and lets the box come after. When the box starts beside the image --- the image is still to be placed, or \cs{pagetotal} has not reached \gv{bottom_dim} --- \cs{linewidth} becomes the width of the narrowed line, computed as in \fn{shape:Nnnn}. The line of the box is then narrowed like any other, and the box fits on it. Other boxes need no such help: a \env{minipage} or a \cs{parbox} is given its width by the author.
 
 \code{inbox}
 

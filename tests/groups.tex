@@ -17,7 +17,11 @@
 %  G6. a block after a deep box (a tabular centred on its axis), its image
 %      taller than its text, then a heading: TeX puts \lineskip after the
 %      deep box, the first line of the block came lower than computed, and
-%      the heading ran into the image (0.1.5).
+%      the heading ran into the image (0.1.5);
+%  G7. a block that opens with a tcolorbox, after a blank line: the box
+%      starts its own paragraph after \nointerlineskip, and the image hung
+%      on it went up into the line before (breakable) or down below the
+%      box (not breakable) (0.1.5), image on either side.
 % run.zsh checks that there is no error, no overfull box, and that no word
 % overlaps an image.
 \documentclass[11pt,a4paper]{article}
@@ -154,4 +158,34 @@ one & two\\ three & four\\ five & six\\ seven & eight\\ nine & ten\\ eleven & tw
 \end{wrapblock}
 \section*{A heading after the block}
 \para
+\clearpage
+G7 --- a block that opens with a box
+
+\para
+
+\begin{wrapblock}[side=l]{\img}
+\begin{tcolorbox}[breakable]
+\begin{itemize}\item \sentence \item \sentence\end{itemize}
+\end{tcolorbox}
+\end{wrapblock}
+
+\para
+
+\begin{wrapblock}[side=r]{\img}
+\begin{tcolorbox}[breakable]\sentence\end{tcolorbox}
+\para
+\end{wrapblock}
+
+\para
+
+\begin{wrapblock}[side=l]{\img}
+\begin{tcolorbox}\sentence\sentence\end{tcolorbox}
+\end{wrapblock}
+
+\para
+
+\begin{wrapblock}[side=r]{\img}
+\begin{tcolorbox}\sentence\end{tcolorbox}
+\para
+\end{wrapblock}
 \end{document}

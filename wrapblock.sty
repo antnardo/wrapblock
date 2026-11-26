@@ -95,6 +95,23 @@
 \bool_new:N \g__wrapblock_breakpar_bool  % this paragraph ends the page
 \seq_new:N \l__wrapblock_done_seq
 \dim_new:N  \g__wrapblock_top_dim       % height of the floats at the top of the page
+\dim_new:N  \wrapblocklinewidth         % the full line of the block, for the image
+\bool_new:N \l__wrapblock_fit_bool      % width=fit
+\fp_new:N   \l__wrapblock_fit_min_fp    % the bounds of the search, fractions
+\fp_new:N   \l__wrapblock_fit_max_fp    % of the line
+\fp_new:N   \l__wrapblock_fit_lo_fp     % the bracket of the search
+\fp_new:N   \l__wrapblock_fit_hi_fp
+\fp_new:N   \l__wrapblock_fit_mid_fp
+\bool_new:N \l__wrapblock_fit_lo_bool   % at lo, the image is the taller
+\bool_new:N \l__wrapblock_fit_mid_bool
+\dim_new:N  \l__wrapblock_fit_lo_dim    % height of the block at lo, at hi
+\dim_new:N  \l__wrapblock_fit_hi_dim
+\dim_new:N  \l__wrapblock_fit_w_dim     % width tried
+\dim_new:N  \l__wrapblock_fit_col_dim   % width left for the text
+\dim_new:N  \l__wrapblock_fit_img_dim   % height of the image at that width
+\dim_new:N  \l__wrapblock_fit_txt_dim   % height of the text beside it
+\int_new:N  \l__wrapblock_fit_int       % steps of the search
+\box_new:N  \g__wrapblock_fit_box
 % </statedefer>
 
 % <shipcount>
@@ -204,6 +221,7 @@
         \hbox_set:Nn \l_tmpa_box
           {
             \cs_if_exist_use:NT \tag_mc_begin:n { { } }
+            \dim_set:Nn \wrapblocklinewidth {#3}
             \__wrapblock_image:nv {#4} { g__wrapblock_def_ #7 _tl }
             \cs_if_exist_use:N \tag_mc_end:
           }
@@ -246,10 +264,20 @@
     r     .meta:n     = { side = r } ,
     % natural: the width of the image itself, kept as -\maxdimen, which no
     % length can be; 0pt is a room of no width, like any other length
+    % fit: searched between fit min and fit max (\__wrapblock_fit:n);
+    % natural until then, and if the search finds nothing
     width .code:n     =
       {
-        \str_if_eq:nnTF {#1} { natural }
-          { \dim_set:Nn \l__wrapblock_width_dim { - \c_max_dim } }
+        \bool_set_false:N \l__wrapblock_fit_bool
+        \str_case:nnF {#1}
+          {
+            { natural } { \dim_set:Nn \l__wrapblock_width_dim { - \c_max_dim } }
+            { fit }
+              {
+                \bool_set_true:N \l__wrapblock_fit_bool
+                \dim_set:Nn \l__wrapblock_width_dim { - \c_max_dim }
+              }
+          }
           { \dim_set:Nn \l__wrapblock_width_dim {#1} }
       } ,
     width .initial:n  = natural ,
@@ -261,6 +289,10 @@
     defer .bool_set:N = \l__wrapblock_allow_defer_bool ,
     defer .initial:n  = true ,
     defer .default:n  = true ,
+    fit~min .fp_set:N = \l__wrapblock_fit_min_fp ,
+    fit~min .initial:n = 0.1 ,
+    fit~max .fp_set:N = \l__wrapblock_fit_max_fp ,
+    fit~max .initial:n = 0.9 ,
   }
 \NewDocumentCommand \wrapblockset { m } { \keys_set:nn { wrapblock } {#1} }
 % </keys>
@@ -885,6 +917,25 @@
         { \mode_if_horizontal_p: }
       }
       { \par }
+    % A box that opens the block: it starts its own paragraph after a
+    % \nointerlineskip, on a line whose height is not that of a strut (an
+    % empty line for a breakable box, the box itself otherwise), and the
+    % image hung on it would go up or down. The image gets a line of its
+    % own first, placed as a first line of text, and the box comes after,
+    % with the height of a strut given back.
+    \bool_lazy_all:nT
+      {
+        { \l__wrapblock_outer_bool }
+        { \g__wrapblock_active_bool }
+        { \g__wrapblock_pending_bool }
+        { ! \g__wrapblock_wait_bool }
+        { \mode_if_vertical_p: }
+        { ! \mode_if_inner_p: }
+      }
+      {
+        \noindent \par \nobreak
+        \tex_kern:D - \box_ht:N \strutbox
+      }
     \bool_lazy_all:nT
       {
         { \l__wrapblock_outer_bool }
@@ -1052,6 +1103,9 @@
     \group_end:
   }
 \cs_new_protected:Npn \__wrapblock_measure:n #1
+  { \__wrapblock_measure:nn { \linewidth } {#1} }
+% #1 the width of the text, #2 the text
+\cs_new_protected:Npn \__wrapblock_measure:nn #1#2
   {
     \__wrapblock_counters_save:
     \hbox_set:Nn \l__wrapblock_labels_box { \box_use:N \@labels }
@@ -1076,13 +1130,14 @@
           \cs_set_eq:NN \@parmoderr \prg_do_nothing:
           \cs_set_eq:NN \@currbox \g__wrapblock_float_box
           \cs_set_eq:NN \@marbox  \g__wrapblock_mar_box
-          \dim_set_eq:NN \hsize \linewidth
+          \dim_set:Nn \hsize {#1}
+          \dim_set_eq:NN \linewidth \hsize
           \dim_zero:N \@totalleftmargin
           \tex_parshape:D 0 ~
           \int_set:Nn \hbadness { 10000 }
           \int_set:Nn \vbadness { 10000 }
           \dim_set_eq:NN \hfuzz \c_max_dim
-          #1
+          #2
           \par
         }
       \dim_gset:Nn \g__wrapblock_text_dim
@@ -1124,6 +1179,161 @@
     the~bottom~of~the~page:~its~image~is~set~after~it. }
 % </msgs>
 
+% <fit>
+% width=fit. The block is tried at widths between fit min and fit max,
+% fractions of the line: at each, the image is built in a minipage of that
+% width, as with the key width, and the text set in the room left beside
+% it. The image may get shorter as the block widens (a caption on fewer
+% lines) or taller (an image whose width is a fraction of \linewidth);
+% the text gets taller. The block is lowest where the two cross: if the
+% image is the taller at one bound and the shorter at the other, a
+% bisection closes on the crossing, to 2% of the line (6 steps from the
+% default bounds). Otherwise there is
+% no crossing between the bounds, and the block keeps its natural width.
+% #1 is the text.
+\cs_new_protected:Npn \__wrapblock_fit:n #1
+  {
+    \fp_set_eq:NN \l__wrapblock_fit_lo_fp \l__wrapblock_fit_min_fp
+    \fp_set_eq:NN \l__wrapblock_fit_hi_fp \l__wrapblock_fit_max_fp
+    \__wrapblock_fit_eval:Nn \l__wrapblock_fit_lo_fp {#1}
+    \bool_set_eq:NN \l__wrapblock_fit_lo_bool \l__wrapblock_fit_mid_bool
+    \dim_set:Nn \l__wrapblock_fit_lo_dim
+      { \dim_max:nn { \l__wrapblock_fit_img_dim } { \l__wrapblock_fit_txt_dim } }
+    \__wrapblock_fit_eval:Nn \l__wrapblock_fit_hi_fp {#1}
+    \dim_set:Nn \l__wrapblock_fit_hi_dim
+      { \dim_max:nn { \l__wrapblock_fit_img_dim } { \l__wrapblock_fit_txt_dim } }
+    % The bounds agree. An image that grows with the block may still be the
+    % taller in the middle: at the bounds, the text is the taller, beside a
+    % small image or in a column that has all but vanished. One more trial,
+    % in the middle, which brackets the crossing if it differs.
+    \bool_if:NT
+      {
+        \bool_lazy_or_p:nn
+          { \bool_lazy_and_p:nn { \l__wrapblock_fit_lo_bool } { \l__wrapblock_fit_mid_bool } }
+          { \bool_lazy_and_p:nn { ! \l__wrapblock_fit_lo_bool } { ! \l__wrapblock_fit_mid_bool } }
+      }
+      {
+        \fp_set:Nn \l__wrapblock_fit_mid_fp
+          { ( \l__wrapblock_fit_lo_fp + \l__wrapblock_fit_hi_fp ) / 2 }
+        \__wrapblock_fit_eval:Nn \l__wrapblock_fit_mid_fp {#1}
+        \bool_if:NT
+          {
+            \bool_lazy_or_p:nn
+              { \bool_lazy_and_p:nn { \l__wrapblock_fit_lo_bool } { ! \l__wrapblock_fit_mid_bool } }
+              { \bool_lazy_and_p:nn { ! \l__wrapblock_fit_lo_bool } { \l__wrapblock_fit_mid_bool } }
+          }
+          {
+            \fp_set_eq:NN \l__wrapblock_fit_hi_fp \l__wrapblock_fit_mid_fp
+            \dim_set:Nn \l__wrapblock_fit_hi_dim
+              { \dim_max:nn { \l__wrapblock_fit_img_dim } { \l__wrapblock_fit_txt_dim } }
+          }
+      }
+    \bool_if:NTF \l__wrapblock_fit_lo_bool
+      { \bool_if:NTF \l__wrapblock_fit_mid_bool { \use_i:nn } { \use_ii:nn } }
+      { \bool_if:NTF \l__wrapblock_fit_mid_bool { \use_ii:nn } { \use_i:nn } }
+      {
+        \msg_warning:nne { wrapblock } { fit }
+          { \bool_if:NTF \l__wrapblock_fit_lo_bool { taller } { shorter } }
+      }
+      {
+        \int_zero:N \l__wrapblock_fit_int
+        \__wrapblock_fit_step:n {#1}
+        \dim_set:Nn \l__wrapblock_width_dim
+          {
+            \fp_to_dim:n
+              {
+                ( \dim_compare:nNnTF { \l__wrapblock_fit_lo_dim } > { \l__wrapblock_fit_hi_dim }
+                    { \l__wrapblock_fit_hi_fp } { \l__wrapblock_fit_lo_fp } )
+                * \linewidth
+              }
+          }
+        \msg_info:nnee { wrapblock } { fit-width }
+          { \dim_use:N \l__wrapblock_width_dim }
+          { \fp_eval:n { round ( \l__wrapblock_width_dim / \linewidth , 3 ) } }
+      }
+  }
+\cs_new_protected:Npn \__wrapblock_fit_step:n #1
+  {
+    \bool_lazy_and:nnT
+      {
+        \fp_compare_p:n
+          { \l__wrapblock_fit_hi_fp - \l__wrapblock_fit_lo_fp > 0.02 }
+      }
+      { \int_compare_p:nNn { \l__wrapblock_fit_int } < { 20 } }
+      {
+        \int_incr:N \l__wrapblock_fit_int
+        \fp_set:Nn \l__wrapblock_fit_mid_fp
+          { ( \l__wrapblock_fit_lo_fp + \l__wrapblock_fit_hi_fp ) / 2 }
+        \__wrapblock_fit_eval:Nn \l__wrapblock_fit_mid_fp {#1}
+        \bool_if:NTF
+          {
+            \bool_lazy_or_p:nn
+              { \bool_lazy_and_p:nn { \l__wrapblock_fit_lo_bool } { \l__wrapblock_fit_mid_bool } }
+              { \bool_lazy_and_p:nn { ! \l__wrapblock_fit_lo_bool } { ! \l__wrapblock_fit_mid_bool } }
+          }
+          {
+            \fp_set_eq:NN \l__wrapblock_fit_lo_fp \l__wrapblock_fit_mid_fp
+            \dim_set:Nn \l__wrapblock_fit_lo_dim
+              { \dim_max:nn { \l__wrapblock_fit_img_dim } { \l__wrapblock_fit_txt_dim } }
+          }
+          {
+            \fp_set_eq:NN \l__wrapblock_fit_hi_fp \l__wrapblock_fit_mid_fp
+            \dim_set:Nn \l__wrapblock_fit_hi_dim
+              { \dim_max:nn { \l__wrapblock_fit_img_dim } { \l__wrapblock_fit_txt_dim } }
+          }
+        \__wrapblock_fit_step:n {#1}
+      }
+  }
+% The block at the width #1 (a fraction of the line), its text #2: the
+% heights of the image and of the text beside it, and whether the image is
+% the taller (\l__wrapblock_fit_mid_bool). The image is built as it will
+% be, its counters put back; with less than 3em left, the text is taken
+% as endless.
+\cs_new_protected:Npn \__wrapblock_fit_eval:Nn #1#2
+  {
+    \dim_set:Nn \l__wrapblock_fit_w_dim { \fp_to_dim:n { #1 * \linewidth } }
+    \__wrapblock_counters_save:
+    \group_begin:
+      \cs_if_exist_use:NT \tag_suspend:n { { wrapblock } }
+      % a trial: an image wider than the block, a caption badly broken,
+      % are not reported. The minipage and a caption run \sloppy (through
+      % \@parboxrestore), which sets \hfuzz again: it is made quiet too.
+      \__wrapblock_quiet:
+      \tl_put_right:Nn \sloppy { \__wrapblock_quiet: }
+      \hbox_gset:Nn \g__wrapblock_fit_box
+        { \__wrapblock_image:nv { \l__wrapblock_fit_w_dim } { g__wrapblock_img_tl } }
+      \cs_if_exist_use:NT \tag_resume:n { { wrapblock } }
+    \group_end:
+    \tl_use:N \g__wrapblock_counters_tl
+    \dim_set:Nn \l__wrapblock_fit_img_dim
+      { \box_ht:N \g__wrapblock_fit_box + \box_dp:N \g__wrapblock_fit_box }
+    \dim_set:Nn \l__wrapblock_fit_col_dim
+      { \linewidth - \box_wd:N \g__wrapblock_fit_box - \l__wrapblock_hsep_dim }
+    \dim_compare:nNnTF { \l__wrapblock_fit_col_dim } < { 3em }
+      { \dim_set_eq:NN \l__wrapblock_fit_txt_dim \c_max_dim }
+      {
+        \__wrapblock_measure:nn { \l__wrapblock_fit_col_dim } {#2}
+        \dim_set_eq:NN \l__wrapblock_fit_txt_dim \g__wrapblock_text_dim
+      }
+    \bool_set:Nn \l__wrapblock_fit_mid_bool
+      { \dim_compare_p:nNn { \l__wrapblock_fit_img_dim } > { \l__wrapblock_fit_txt_dim } }
+  }
+\cs_new_protected:Npn \__wrapblock_quiet:
+  {
+    \int_set:Nn \hbadness { 10000 }
+    \int_set:Nn \vbadness { 10000 }
+    \dim_set_eq:NN \hfuzz \c_max_dim
+    \dim_set_eq:NN \vfuzz \c_max_dim
+  }
+\msg_new:nnn { wrapblock } { fit }
+  { The~image~of~the~block~that~ends~on~input~line~\msg_line_number:\
+    is~#1~than~its~text~at~every~width~between~fit~min~and~fit~max:~
+    width=fit~finds~no~crossing,~and~the~image~keeps~its~natural~width. }
+\msg_new:nnn { wrapblock } { fit-width }
+  { The~block~that~ends~on~input~line~\msg_line_number:\ is~#1~wide,~#2~of~
+    the~line~(width=fit). }
+% </fit>
+
 % <env>
 % ---------------------------------------------------------------- user
 \NewDocumentEnvironment { wrapblock } { O{} +m +b }
@@ -1133,6 +1343,8 @@
     \int_gincr:N \g__wrapblock_block_int
     \keys_set:nn { wrapblock } {#1}
     \tl_gset:Nn \g__wrapblock_img_tl {#2}
+    \dim_gset_eq:NN \wrapblocklinewidth \linewidth
+    \bool_if:NT \l__wrapblock_fit_bool { \__wrapblock_fit:n {#3} }
     \dim_gset_eq:NN \g__wrapblock_img_width_dim \l__wrapblock_width_dim
     % measured here, with tagging suspended; built for good where it is
     % placed, inside the first paragraph (see \__wrapblock_build:)

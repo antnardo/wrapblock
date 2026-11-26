@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Runs every test with pdfLaTeX and LuaLaTeX, plain and tagged:
 # limits.tex (article and book), extra.tex, contexts.tex (and twocolumn),
-# floats.tex, images.tex, groups.tex, bottom.tex, items.tex, heading.tex.
+# floats.tex, images.tex, groups.tex, fit.tex, bottom.tex, items.tex, heading.tex.
 # Prints errors, overfull boxes, `moved` warnings, overlaps and tagpdf
 # structure warnings.
 # First checks that the documentation prints the whole package (chunks.py).
@@ -52,6 +52,9 @@ for engine in pdflatex lualatex; do
   # a caption in an image with a width, a tcolorbox below the image
   # right after one beside it
   compile groups-$engine "" groups 2
+  # width=fit: the width of the block searched between fit min and fit max
+  compile fit-$engine "" fit 2
+  printf "%-26s " ""; grep -c 'wide, [0-9.]* of' fit-$engine.log | sed 's/$/ widths found (5 expected)/'
   # blocks after a heading, blocks near the bottom of a page
   compile bottom-$engine "" bottom 2
   printf "%-26s " ""; python3 bottom.py bottom-$engine.pdf 16 | head -1
